@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — The Grand Archive</title>
+
+<style>
+:root {
+  --paper:#faf7ef;
+  --line:#dedac9;
+  --ink:#23221e;
+  --soft:#6b675c;
+  --accent:#a83e32;
+  --gold:#b58a32;
+  --card:#fff;
+  --shadow:rgba(0,0,0,.08);
+}
+
+[data-theme="dark"]{
+  --paper:#191815;
+  --line:#353229;
+  --ink:#eee8dc;
+  --soft:#aaa292;
+  --accent:#d9796b;
+  --gold:#d3aa55;
+  --card:#24221d;
+  --shadow:rgba(0,0,0,.35);
+}
+
+*{
+ box-sizing:border-box;
+}
+
+body{
+ margin:0;
+ min-height:100vh;
+ background:
+ linear-gradient(var(--line) 1px,transparent 1px);
+ background-size:100% 2rem;
+ background-color:var(--paper);
+ color:var(--ink);
+ font-family:Georgia,"Times New Roman",serif;
+}
+
+.wrap{
+ max-width:700px;
+ margin:auto;
+ padding:2rem 1rem 4rem;
+}
+
+header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ border-bottom:2px solid var(--ink);
+ padding-bottom:1rem;
+ margin-bottom:1.5rem;
+}
+
+h1{
+ margin:0;
+ font-size:2rem;
+}
+
+.subtitle{
+ margin:.3rem 0 0;
+ color:var(--soft);
+ font-style:italic;
+}
+
+button{
+ font-family:"Courier New",monospace;
+ cursor:pointer;
+}
+
+#themeBtn{
+ background:none;
+ border:1px solid var(--soft);
+ color:var(--ink);
+ padding:.4rem .8rem;
+}
+
+.card{
+ background:var(--card);
+ border:1px solid var(--line);
+ box-shadow:0 2px 5px var(--shadow);
+ padding:1.2rem;
+ margin-bottom:1rem;
+ border-radius:5px;
+}
+
+.title{
+ text-transform:uppercase;
+ letter-spacing:.1em;
+ font-size:.75rem;
+ color:var(--soft);
+ margin-bottom:1rem;
+}
+
+.resource{
+ display:flex;
+ justify-content:space-between;
+ padding:.7rem 0;
+ border-bottom:1px dashed var(--line);
+}
+
+.resource:last-child{
+ border:none;
+}
+
+.amount{
+ font-family:"Courier New",monospace;
+ font-size:1.5rem;
+ font-weight:bold;
+}
+
+.rate{
+ color:var(--soft);
+ font-family:"Courier New",monospace;
+ font-size:.8rem;
+}
+
+.main-btn{
+ width:100%;
+ padding:1rem;
+ margin-top:1rem;
+ background:var(--ink);
+ color:var(--paper);
+ border:none;
+ font-size:1rem;
+ letter-spacing:.05em;
+}
+
+.main-btn:hover{
+ background:var(--accent);
+}
+
+.upgrade{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:.8rem 0;
+ border-bottom:1px dashed var(--line);
+}
+
+.upgrade h3{
+ margin:0;
+}
+
+.upgrade p{
+ margin:.2rem 0;
+ color:var(--soft);
+ font-size:.8rem;
+}
+
+.buy{
+ background:var(--ink);
+ color:var(--paper);
+ border:none;
+ padding:.5rem;
+}
+
+.buy:disabled{
+ opacity:.4;
+}
+
+.stat{
+ display:flex;
+ justify-content:space-between;
+ font-family:"Courier New",monospace;
+ margin:.4rem 0;
+}
+
+.progress{
+ height:6px;
+ background:var(--line);
+ margin-top:.5rem;
+}
+
+.fill{
+ height:100%;
+ background:var(--accent);
+ width:0%;
+}
+
+.float{
+ position:fixed;
+ pointer-events:none;
+ font-family:"Courier New",monospace;
+ color:var(--accent);
+ animation:rise .8s forwards;
+}
+
+@keyframes rise{
+ from{
+ opacity:1;
+ transform:translateY(0);
+ }
+ to{
+ opacity:0;
+ transform:translateY(-80px);
+ }
+}
+
+.log{
+ font-family:"Courier New",monospace;
+ font-size:.8rem;
+ color:var(--soft);
+}
+
+.log div{
+ margin:.4rem 0;
+ border-left:2px solid var(--accent);
+ padding-left:.5rem;
+}
+
+.hidden{
+ display:none;
+}
+
+footer{
+ text-align:center;
+ color:var(--soft);
+ font-size:.75rem;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<header>
+<div>
+<h1>Ledger</h1>
+<div class="subtitle">
+an endless accounting of small fortunes
+</div>
+</div>
+
+<button id="themeBtn">
+DARK MODE
+</button>
+
+</header>
+
+
+<div class="card">
+
+<div class="title">
+Treasury
+</div>
+
+<div id="resources"></div>
+
+<button class="main-btn" id="gather">
+GATHER PAPER
+</button>
+
+</div>
+
+
+<div class="card">
+
+<div class="title">
+Upgrades
+</div>
+
+<div id="upgrades"></div>
+
+</div>
+
+
+<div class="card">
+
+<div class="title">
+Archive
+</div>
+
+<div class="stat">
+<span>Archive Pages</span>
+<span id="prestige">0</span>
+</div>
+
+<div class="stat">
+<span>Permanent Bonus</span>
+<span id="bonus">0%</span>
+</div>
+
+<button class="main-btn" id="archive">
+Archive Current Ledger
+</button>
+
+</div>
+
+
+<div class="card">
+
+<div class="title">
+Achievements
+</div>
+
+<div id="achievements"></div>
+
+</div>
+
+
+<div class="card">
+
+<div class="title">
+Ledger Entries
+</div>
+
+<div class="log" id="log">
+<div>Nothing recorded.</div>
+</div>
+
+</div>
+
+
+<footer>
+Ledger v2 · progress saves automatically
+</footer>
+
+
+</div>
+
+
+<script>
+
+"use strict";
+
+
+const DATA={
+
+resources:{
+coins:{
+label:"Coins",
+amount:0
+},
+
+paper:{
+label:"Paper",
+amount:0,
+click:1,
+value:1
+},
+
+ink:{
+label:"Ink",
+amount:0,
+value:3
+},
+
+books:{
+label:"Books",
+amount:0,
+value:8
+}
+
+},
+
+
+upgrades:{
+
+pen:{
+name:"Fine Quill",
+cost:20,
+effect:"click",
+power:1
+},
+
+worker:{
+name:"Apprentice",
+cost:50,
+effect:"paper",
+power:.5
+},
+
+press:{
+name:"Printing Press",
+cost:200,
+effect:"books",
+power:.1
+}
+
+}
+
+};
+
+
+
+let state={
+
+resources:{
+coins:0,
+paper:0,
+ink:0,
+books:0
+},
+
+rates:{
+paper:0,
+ink:0,
+books:0
+},
+
+clickPower:1,
+
+upgrades:{},
+
+archive:0,
+
+lastSave:Date.now(),
+
+combo:0
+
+};
+
+
+for(let u in DATA.upgrades)
+state.upgrades[u]=0;
+
+
+
+const achievements=[
+
+{
+id:"paper",
+name:"First Stack",
+check:s=>s.resources.paper>=100
+},
+
+{
+id:"books",
+name:"Published",
+check:s=>s.resources.books>=10
+},
+
+{
+id:"rich",
+name:"Accountant",
+check:s=>s.resources.coins>=1000
+}
+
+];
+
+
+let unlocked=[];
+
+
+function save(){
+
+localStorage.ledger=JSON.stringify(state);
+
+}
+
+
+function load(){
+
+if(localStorage.ledger){
+
+state={
+...state,
+...JSON.parse(localStorage.ledger)
+};
+
+}
+
+}
+
+
+load();
+function format(n){
+  if(n<1000)
+    return Math.floor(n);
+
+  if(n<1000000)
+    return (n/1000).toFixed(1)+"K";
+
+  if(n<1000000000)
+    return (n/1000000).toFixed(1)+"M";
+
+  return (n/1000000000).toFixed(1)+"B";
+}
+
+
+
+function addResource(id,amount){
+
+  state.resources[id]+=amount;
+
+}
+
+
+
+function spendCoins(amount){
+
+  if(state.resources.coins>=amount){
+    state.resources.coins-=amount;
+    return true;
+  }
+
+  return false;
+
+}
+
+
+
+function log(text){
+
+ const box=document.getElementById("log");
+
+ if(box.children.length===1 &&
+ box.children[0].textContent==="Nothing recorded.")
+ box.innerHTML="";
+
+
+ let e=document.createElement("div");
+ e.textContent="» "+text;
+
+ box.prepend(e);
+
+
+ while(box.children.length>6)
+ box.lastChild.remove();
+
+}
+
+
+
+function floating(text){
+
+ let f=document.createElement("div");
+
+ f.className="float";
+ f.textContent=text;
+
+ f.style.left=(50+Math.random()*20-10)+"%";
+ f.style.top="60%";
+
+
+ document.body.appendChild(f);
+
+
+ setTimeout(()=>{
+   f.remove();
+ },800);
+
+}
+
+
+
+
+function gather(){
+
+ state.combo++;
+
+ let amount=state.clickPower;
+
+ if(state.combo>=10)
+ amount*=2;
+
+
+ addResource("paper",amount);
+
+ addResource("coins",amount);
+
+
+ floating("+"+format(amount)+" paper");
+
+
+ checkAchievements();
+
+ render();
+
+ save();
+
+}
+
+
+
+function production(){
+
+ let seconds=.2;
+
+
+ // paper workers
+
+ if(state.rates.paper){
+
+ addResource(
+ "paper",
+ state.rates.paper*seconds
+ );
+
+ }
+
+
+
+ // ink creation
+
+ if(state.resources.paper>0 &&
+ state.rates.ink){
+
+ let ink=
+ Math.min(
+ state.rates.ink*seconds,
+ state.resources.paper*.1
+ );
+
+ state.resources.paper-=ink*10;
+
+ addResource(
+ "ink",
+ ink
+ );
+
+ }
+
+
+
+ // books
+
+ if(
+ state.resources.ink>0 &&
+ state.rates.books
+ ){
+
+ let books=
+ Math.min(
+ state.rates.books*seconds,
+ state.resources.ink*.2
+ );
+
+
+ state.resources.ink-=books*5;
+
+
+ addResource(
+ "books",
+ books
+ );
+
+
+ }
+
+
+
+ // selling
+
+ let income=
+
+ state.resources.paper*.001+
+ state.resources.ink*.003+
+ state.resources.books*.008;
+
+
+ addResource(
+ "coins",
+ income
+ );
+
+
+}
+
+
+
+
+function buyUpgrade(id){
+
+ let u=DATA.upgrades[id];
+
+ let cost=
+ Math.floor(
+ u.cost*
+ Math.pow(
+ 1.35,
+ state.upgrades[id]
+ )
+ );
+
+
+ if(!spendCoins(cost))
+ return;
+
+
+
+ state.upgrades[id]++;
+
+
+ if(u.effect==="click")
+ state.clickPower+=u.power;
+
+
+ if(u.effect==="paper")
+ state.rates.paper+=u.power;
+
+
+ if(u.effect==="books")
+ state.rates.books+=u.power;
+
+
+ log(
+ "Purchased "+u.name
+ );
+
+
+ render();
+
+ save();
+
+}
+
+
+
+
+function archive(){
+
+ if(state.resources.coins<5000){
+
+ log(
+ "The ledger is not valuable enough yet."
+ );
+
+ return;
+
+ }
+
+
+
+ state.archive++;
+
+ state.resources={
+ coins:0,
+ paper:0,
+ ink:0,
+ books:0
+ };
+
+
+ state.rates={
+ paper:0,
+ ink:0,
+ books:0
+ };
+
+
+ state.clickPower=
+ 1+state.archive*.25;
+
+
+ log(
+ "A new archive begins. Permanent knowledge gained."
+ );
+
+
+ render();
+
+ save();
+
+}
+
+
+
+
+function checkAchievements(){
+
+ achievements.forEach(a=>{
+
+ if(
+ !unlocked.includes(a.id)
+ &&
+ a.check(state)
+ ){
+
+ unlocked.push(a.id);
+
+ log(
+ "Achievement: "+a.name
+ );
+
+ }
+
+ });
+
+}
+
+
+
+
+function render(){
+
+
+let r=document.getElementById("resources");
+
+
+r.innerHTML="";
+
+
+for(let id in DATA.resources){
+
+
+ let d=DATA.resources[id];
+
+ let div=document.createElement("div");
+
+ div.className="resource";
+
+
+ div.innerHTML=`
+
+ <span>
+ ${d.label}
+ </span>
+
+ <span class="amount">
+ ${format(state.resources[id])}
+ </span>
+
+ <span class="rate">
+ </span>
+
+ `;
+
+
+ let rate="";
+
+
+ if(id==="paper")
+ rate=state.rates.paper.toFixed(1)+"/sec";
+
+ if(id==="ink")
+ rate=state.rates.ink.toFixed(1)+"/sec";
+
+ if(id==="books")
+ rate=state.rates.books.toFixed(1)+"/sec";
+
+
+ div.querySelector(".rate")
+ .textContent=rate;
+
+
+ r.appendChild(div);
+
+}
+
+
+
+
+let up=document.getElementById("upgrades");
+
+up.innerHTML="";
+
+
+for(let id in DATA.upgrades){
+
+let d=DATA.upgrades[id];
+
+
+let cost=
+Math.floor(
+d.cost*
+Math.pow(
+1.35,
+state.upgrades[id]
+)
+);
+
+
+
+let row=document.createElement("div");
+
+row.className="upgrade";
+
+
+row.innerHTML=`
+
+<div>
+
+<h3>${d.name}</h3>
+
+<p>
+Owned: ${state.upgrades[id]}
+</p>
+
+</div>
+
+
+<button class="buy">
+${cost} coins
+</button>
+
+`;
+
+
+row.querySelector("button")
+.onclick=()=>buyUpgrade(id);
+
+
+row.querySelector("button")
+.disabled=
+state.resources.coins<cost;
+
+
+
+up.appendChild(row);
+
+
+}
+
+
+
+
+
+document.getElementById("prestige")
+.textContent=
+state.archive;
+
+
+
+document.getElementById("bonus")
+.textContent=
+Math.floor(state.archive*25)+"%";
+
+
+
+
+
+let ach=document.getElementById("achievements");
+
+ach.innerHTML="";
+
+
+achievements.forEach(a=>{
+
+
+let div=document.createElement("div");
+
+
+div.textContent=
+(unlocked.includes(a.id)?"✓ ":"○ ")
++a.name;
+
+
+ach.appendChild(div);
+
+
+});
+
+
+}
+
+
+
+
+
+document
+.getElementById("gather")
+.onclick=gather;
+
+
+
+document
+.getElementById("archive")
+.onclick=archive;
+
+
+
+
+document
+.getElementById("themeBtn")
+.onclick=()=>{
+
+let html=document.documentElement;
+
+let dark=
+html.dataset.theme==="dark";
+
+
+html.dataset.theme=
+dark?"light":"dark";
+
+
+document.getElementById("themeBtn")
+.textContent=
+dark?"DARK MODE":"LIGHT MODE";
+
+};
+
+
+
+
+
+// offline earnings
+
+let elapsed=
+(Date.now()-state.lastSave)/1000;
+
+
+if(elapsed>5){
+
+let gain=
+elapsed*
+(
+state.rates.paper+
+state.rates.ink+
+state.rates.books
+);
+
+state.resources.coins+=gain;
+
+log(
+"Offline earnings: +"+
+format(gain)+" coins"
+);
+
+}
+
+
+
+
+setInterval(()=>{
+
+production();
+
+checkAchievements();
+
+render();
+
+save();
+
+
+state.lastSave=Date.now();
+
+
+},200);
+
+
+
+
+render();
+
+
+</script>
+
+</body>
+</html>
