@@ -3,1046 +3,935 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ledger — The Grand Archive</title>
-
+<title>Ledger — An Idle Game</title>
 <style>
-:root {
-  --paper:#faf7ef;
-  --line:#dedac9;
-  --ink:#23221e;
-  --soft:#6b675c;
-  --accent:#a83e32;
-  --gold:#b58a32;
-  --card:#fff;
-  --shadow:rgba(0,0,0,.08);
-}
+  /* ============================================================
+     DESIGN TOKENS
+     Paper-ledger aesthetic: serif for voice, monospace for numbers.
+     ============================================================ */
+  :root {
+    --paper:        #FAF7EF;
+    --paper-line:   #DEDAC9;
+    --ink:          #23221E;
+    --ink-soft:     #6B675C;
+    --accent:       #A83E32;   /* ledger red, used sparingly */
+    --accent-soft:  #C97A6D;
+    --card-bg:      #FFFFFF;
+    --shadow:       rgba(35, 34, 30, 0.06);
+  }
 
-[data-theme="dark"]{
-  --paper:#191815;
-  --line:#353229;
-  --ink:#eee8dc;
-  --soft:#aaa292;
-  --accent:#d9796b;
-  --gold:#d3aa55;
-  --card:#24221d;
-  --shadow:rgba(0,0,0,.35);
-}
+  [data-theme="dark"] {
+    --paper:        #1B1A17;
+    --paper-line:   #38362F;
+    --ink:          #EDE8DC;
+    --ink-soft:     #9A9587;
+    --accent:       #D97B6C;
+    --accent-soft:  #A85246;
+    --card-bg:      #24221D;
+    --shadow:       rgba(0, 0, 0, 0.35);
+  }
 
-*{
- box-sizing:border-box;
-}
+  * { box-sizing: border-box; }
 
-body{
- margin:0;
- min-height:100vh;
- background:
- linear-gradient(var(--line) 1px,transparent 1px);
- background-size:100% 2rem;
- background-color:var(--paper);
- color:var(--ink);
- font-family:Georgia,"Times New Roman",serif;
-}
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 2.1rem;
+    color: var(--ink);
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
 
-.wrap{
- max-width:700px;
- margin:auto;
- padding:2rem 1rem 4rem;
-}
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2.2rem 1.4rem 4rem;
+  }
 
-header{
- display:flex;
- justify-content:space-between;
- align-items:center;
- border-bottom:2px solid var(--ink);
- padding-bottom:1rem;
- margin-bottom:1.5rem;
-}
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.9rem;
+    margin-bottom: 1.8rem;
+  }
 
-h1{
- margin:0;
- font-size:2rem;
-}
+  header h1 {
+    margin: 0;
+    font-size: 1.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
 
-.subtitle{
- margin:.3rem 0 0;
- color:var(--soft);
- font-style:italic;
-}
+  header .subtitle {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
 
-button{
- font-family:"Courier New",monospace;
- cursor:pointer;
-}
+  #themeToggle {
+    border: 1px solid var(--ink-soft);
+    background: transparent;
+    color: var(--ink);
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  #themeToggle:hover { border-color: var(--ink); }
 
-#themeBtn{
- background:none;
- border:1px solid var(--soft);
- color:var(--ink);
- padding:.4rem .8rem;
-}
+  .ledger-card {
+    background: var(--card-bg);
+    border: 1px solid var(--paper-line);
+    border-radius: 4px;
+    box-shadow: 0 1px 3px var(--shadow);
+    padding: 1.3rem 1.4rem;
+    margin-bottom: 1.2rem;
+  }
 
-.card{
- background:var(--card);
- border:1px solid var(--line);
- box-shadow:0 2px 5px var(--shadow);
- padding:1.2rem;
- margin-bottom:1rem;
- border-radius:5px;
-}
+  .resource-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px dashed var(--paper-line);
+    padding-bottom: 0.9rem;
+    margin-bottom: 0.9rem;
+  }
 
-.title{
- text-transform:uppercase;
- letter-spacing:.1em;
- font-size:.75rem;
- color:var(--soft);
- margin-bottom:1rem;
-}
+  .resource-name {
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
 
-.resource{
- display:flex;
- justify-content:space-between;
- padding:.7rem 0;
- border-bottom:1px dashed var(--line);
-}
+  .resource-amount {
+    font-family: 'Courier New', monospace;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
 
-.resource:last-child{
- border:none;
-}
+  .resource-rate {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    text-align: right;
+  }
 
-.amount{
- font-family:"Courier New",monospace;
- font-size:1.5rem;
- font-weight:bold;
-}
+  .gather-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: transform 0.08s ease, background-color 0.2s ease;
+  }
+  .gather-btn:hover { background: var(--accent); }
+  .gather-btn:active { transform: scale(0.98); }
 
-.rate{
- color:var(--soft);
- font-family:"Courier New",monospace;
- font-size:.8rem;
-}
+  .gain-flash {
+    display: block;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    opacity: 0;
+    margin-top: 0.4rem;
+  }
+  .gain-flash.show {
+    animation: fadeUp 0.6s ease forwards;
+  }
+  @keyframes fadeUp {
+    0%   { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
 
-.main-btn{
- width:100%;
- padding:1rem;
- margin-top:1rem;
- background:var(--ink);
- color:var(--paper);
- border:none;
- font-size:1rem;
- letter-spacing:.05em;
-}
+  footer {
+    margin-top: 2rem;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    text-align: center;
+    font-family: 'Courier New', monospace;
+  }
 
-.main-btn:hover{
- background:var(--accent);
-}
+  #resetBtn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0;
+  }
+  #resetBtn:hover { color: var(--accent); }
 
-.upgrade{
- display:flex;
- justify-content:space-between;
- align-items:center;
- padding:.8rem 0;
- border-bottom:1px dashed var(--line);
-}
+  .section-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 0.6rem 0.1rem;
+  }
 
-.upgrade h3{
- margin:0;
-}
+  .upgrade-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px dashed var(--paper-line);
+  }
+  .upgrade-row:last-child { border-bottom: none; }
 
-.upgrade p{
- margin:.2rem 0;
- color:var(--soft);
- font-size:.8rem;
-}
+  .upgrade-info h3 {
+    margin: 0 0 0.15rem;
+    font-size: 0.98rem;
+  }
+  .upgrade-info p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .upgrade-owned {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin-top: 0.3rem;
+  }
 
-.buy{
- background:var(--ink);
- color:var(--paper);
- border:none;
- padding:.5rem;
-}
+  .buy-btn {
+    flex-shrink: 0;
+    min-width: 92px;
+    padding: 0.55rem 0.7rem;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+  }
+  .buy-btn:hover:not(:disabled) { background: var(--accent); }
+  .buy-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
-.buy:disabled{
- opacity:.4;
-}
+  .hidden { display: none !important; }
 
-.stat{
- display:flex;
- justify-content:space-between;
- font-family:"Courier New",monospace;
- margin:.4rem 0;
-}
+  .locked-view {
+    width: 100%;
+  }
 
-.progress{
- height:6px;
- background:var(--line);
- margin-top:.5rem;
-}
+  .locked-view .resource-name {
+    color: var(--ink-soft);
+    letter-spacing: 0.03em;
+  }
 
-.fill{
- height:100%;
- background:var(--accent);
- width:0%;
-}
+  .unlock-progress-track {
+    margin-top: 0.5rem;
+    height: 5px;
+    background: var(--paper-line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
 
-.float{
- position:fixed;
- pointer-events:none;
- font-family:"Courier New",monospace;
- color:var(--accent);
- animation:rise .8s forwards;
-}
+  .unlock-progress-fill {
+    height: 100%;
+    background: var(--accent-soft);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
 
-@keyframes rise{
- from{
- opacity:1;
- transform:translateY(0);
- }
- to{
- opacity:0;
- transform:translateY(-80px);
- }
-}
+  .unlock-progress-label {
+    margin-top: 0.35rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+  }
 
-.log{
- font-family:"Courier New",monospace;
- font-size:.8rem;
- color:var(--soft);
-}
+  .unlocked-view {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+  }
 
-.log div{
- margin:.4rem 0;
- border-left:2px solid var(--accent);
- padding-left:.5rem;
-}
-
-.hidden{
- display:none;
-}
-
-footer{
- text-align:center;
- color:var(--soft);
- font-size:.75rem;
-}
+  #eventLog {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  #eventLog .log-entry {
+    border-left: 2px solid var(--accent-soft);
+    padding-left: 0.6rem;
+  }
+  #eventLog .log-empty {
+    border-left: none;
+    padding-left: 0;
+    font-style: italic;
+  }
 </style>
 </head>
-
 <body>
 
 <div class="wrap">
+  <header>
+    <div>
+      <h1>Ledger</h1>
+      <p class="subtitle">an idle accounting of small gains</p>
+    </div>
+    <button id="themeToggle" type="button">DARK MODE</button>
+  </header>
 
-<header>
-<div>
-<h1>Ledger</h1>
-<div class="subtitle">
-an endless accounting of small fortunes
+  <div class="ledger-card">
+    <div class="section-label">Resources</div>
+    <div id="resourcesList"></div>
+    <button class="gather-btn" id="gatherBtn" type="button">GATHER PAPER</button>
+    <span class="gain-flash" id="gainFlash">+1</span>
+  </div>
+
+  <div class="ledger-card">
+    <div class="section-label">Upgrades</div>
+    <div id="upgradesList"></div>
+  </div>
+
+  <div class="ledger-card">
+    <div class="section-label">Log</div>
+    <div id="eventLog"><div class="log-entry log-empty">Nothing recorded yet.</div></div>
+  </div>
+
+  <footer>tier 3 of 7 — books &nbsp;·&nbsp; <button id="resetBtn" type="button">reset progress</button></footer>
 </div>
-</div>
-
-<button id="themeBtn">
-DARK MODE
-</button>
-
-</header>
-
-
-<div class="card">
-
-<div class="title">
-Treasury
-</div>
-
-<div id="resources"></div>
-
-<button class="main-btn" id="gather">
-GATHER PAPER
-</button>
-
-</div>
-
-
-<div class="card">
-
-<div class="title">
-Upgrades
-</div>
-
-<div id="upgrades"></div>
-
-</div>
-
-
-<div class="card">
-
-<div class="title">
-Archive
-</div>
-
-<div class="stat">
-<span>Archive Pages</span>
-<span id="prestige">0</span>
-</div>
-
-<div class="stat">
-<span>Permanent Bonus</span>
-<span id="bonus">0%</span>
-</div>
-
-<button class="main-btn" id="archive">
-Archive Current Ledger
-</button>
-
-</div>
-
-
-<div class="card">
-
-<div class="title">
-Achievements
-</div>
-
-<div id="achievements"></div>
-
-</div>
-
-
-<div class="card">
-
-<div class="title">
-Ledger Entries
-</div>
-
-<div class="log" id="log">
-<div>Nothing recorded.</div>
-</div>
-
-</div>
-
-
-<footer>
-Ledger v2 · progress saves automatically
-</footer>
-
-
-</div>
-
 
 <script>
+'use strict';
 
-"use strict";
+/* ============================================================
+   DATA  (future: split into src/data/resources.js, upgrades.js)
+   Pure definitions. No logic lives here.
+   ============================================================ */
+const DATA = {
+  resources: {
+    // Coins is the universal currency — every upgrade, at every
+    // tier, is bought with coins. It has no coinValue of its own.
+    coins: {
+      id: 'coins',
+      label: 'Coins',
+      startingAmount: 0,
+      startingRate: 0,
+    },
+    paper: {
+      id: 'paper',
+      label: 'Paper',
+      startingAmount: 0,
+      startingRate: 0,
+      startingClickYield: 1, // paper gained per manual gather click
+      startingAutoSellRate: 0.2, // paper/sec auto-sold once unlocked
+      coinValue: 1,   // coins earned per unit sold
+    },
+    ink: {
+      id: 'ink',
+      label: 'Ink',
+      startingAmount: 0,
+      startingRate: 0,
+      startingAutoSellRate: 0.05,
+      coinValue: 3,
+    },
+    books: {
+      id: 'books',
+      label: 'Books',
+      startingAmount: 0,
+      startingRate: 0,
+      startingAutoSellRate: 0.02,
+      coinValue: 8,
+      // Producing books also drains ink stock. If ink runs dry,
+      // book production stalls until more ink is on hand.
+      consumes: { resource: 'ink', ratio: 1.5 },
+    },
+  },
 
+  // Conditions that gate a resource's visibility. A resource with
+  // no entry here is unlocked from the start (e.g. paper, coins).
+  unlocks: {
+    ink: {
+      type: 'totalCollected',
+      resource: 'paper',
+      amount: 50,
+      logMessage: 'Enough paper piling up that binding pages makes sense. Ink unlocked.',
+    },
+    books: {
+      type: 'totalCollected',
+      resource: 'ink',
+      amount: 30,
+      logMessage: 'Enough ink on hand to start binding proper books. Books unlocked.',
+    },
+  },
 
-const DATA={
-
-resources:{
-coins:{
-label:"Coins",
-amount:0
-},
-
-paper:{
-label:"Paper",
-amount:0,
-click:1,
-value:1
-},
-
-ink:{
-label:"Ink",
-amount:0,
-value:3
-},
-
-books:{
-label:"Books",
-amount:0,
-value:8
-}
-
-},
-
-
-upgrades:{
-
-pen:{
-name:"Fine Quill",
-cost:20,
-effect:"click",
-power:1
-},
-
-worker:{
-name:"Apprentice",
-cost:50,
-effect:"paper",
-power:.5
-},
-
-press:{
-name:"Printing Press",
-cost:200,
-effect:"books",
-power:.1
-}
-
-}
-
+  // Adding a new upgrade later = adding a new entry here.
+  // No other code needs to change for it to appear and function.
+  upgrades: {
+    apprentice: {
+      id: 'apprentice',
+      label: 'Apprentice',
+      description: 'A steady hand, gathering while you look away.',
+      resource: 'coins',    // universal currency
+      producesResource: 'paper',
+      baseCost: 10,
+      costGrowth: 1.15,
+      rateBonus: 0.5,
+    },
+    quill: {
+      id: 'quill',
+      label: 'Sharper Quill',
+      description: 'Gather more paper per stroke by hand.',
+      resource: 'coins',
+      producesResource: 'paper',
+      clickBonus: 1,   // +paper per manual gather click (not a rate)
+      baseCost: 15,
+      costGrowth: 1.25,
+    },
+    inkMerchant: {
+      id: 'inkMerchant',
+      label: 'Ink Merchant',
+      description: 'Sells surplus paper to fund a small ink operation.',
+      resource: 'coins',
+      producesResource: 'ink',
+      requiresUnlocked: 'ink',
+      baseCost: 25,
+      costGrowth: 1.18,
+      rateBonus: 0.2,
+    },
+    bindery: {
+      id: 'bindery',
+      label: 'Bindery',
+      description: 'Binds ink and paper into finished books.',
+      resource: 'coins',
+      producesResource: 'books',
+      requiresUnlocked: 'books',
+      baseCost: 60,
+      costGrowth: 1.2,
+      rateBonus: 0.15,
+    },
+  },
 };
 
+/* ============================================================
+   UTILS  (future: src/utils/format.js, src/utils/time.js)
+   Pure functions only. No state, no DOM.
+   ============================================================ */
+const UTILS = {
+  formatNumber(n) {
+    if (n < 1000) return n.toFixed(n % 1 === 0 ? 0 : 1);
+    const units = ['K', 'M', 'B', 'T', 'Qa', 'Qi'];
+    let unitIndex = -1;
+    let value = n;
+    while (value >= 1000 && unitIndex < units.length - 1) {
+      value /= 1000;
+      unitIndex++;
+    }
+    return value.toFixed(2) + units[unitIndex];
+  },
 
-
-let state={
-
-resources:{
-coins:0,
-paper:0,
-ink:0,
-books:0
-},
-
-rates:{
-paper:0,
-ink:0,
-books:0
-},
-
-clickPower:1,
-
-upgrades:{},
-
-archive:0,
-
-lastSave:Date.now(),
-
-combo:0
-
+  now() {
+    return Date.now();
+  },
 };
 
+/* ============================================================
+   GAME STATE  (future: src/core/state.js)
+   The single source of truth. No DOM access, no rendering.
+   ============================================================ */
+const GameState = {
+  resources: {},
+  upgrades: {},
 
-for(let u in DATA.upgrades)
-state.upgrades[u]=0;
+  init() {
+    for (const key in DATA.resources) {
+      const def = DATA.resources[key];
+      this.resources[key] = {
+        amount: def.startingAmount,
+        rate: def.startingRate, // per second
+        totalCollected: 0,      // lifetime total, never decreases
+        clickYield: def.startingClickYield || 0, // per manual gather click
+      };
+    }
+    for (const key in DATA.upgrades) {
+      this.upgrades[key] = { owned: 0 };
+    }
+  },
 
+  addResource(id, amount) {
+    this.resources[id].amount += amount;
+    this.resources[id].totalCollected += amount;
+  },
 
+  spendResource(id, amount) {
+    this.resources[id].amount -= amount;
+  },
 
-const achievements=[
+  raiseRate(id, amount) {
+    this.resources[id].rate += amount;
+  },
 
-{
-id:"paper",
-name:"First Stack",
-check:s=>s.resources.paper>=100
-},
+  raiseClickYield(id, amount) {
+    this.resources[id].clickYield += amount;
+  },
 
-{
-id:"books",
-name:"Published",
-check:s=>s.resources.books>=10
-},
+  getResource(id) {
+    return this.resources[id];
+  },
 
-{
-id:"rich",
-name:"Accountant",
-check:s=>s.resources.coins>=1000
-}
-
-];
-
-
-let unlocked=[];
-
-
-function save(){
-
-localStorage.ledger=JSON.stringify(state);
-
-}
-
-
-function load(){
-
-if(localStorage.ledger){
-
-state={
-...state,
-...JSON.parse(localStorage.ledger)
+  getUpgradeState(id) {
+    return this.upgrades[id];
+  },
 };
 
-}
-
-}
-
-
-load();
-function format(n){
-  if(n<1000)
-    return Math.floor(n);
-
-  if(n<1000000)
-    return (n/1000).toFixed(1)+"K";
-
-  if(n<1000000000)
-    return (n/1000000).toFixed(1)+"M";
-
-  return (n/1000000000).toFixed(1)+"B";
-}
-
-
-
-function addResource(id,amount){
-
-  state.resources[id]+=amount;
-
-}
-
-
-
-function spendCoins(amount){
-
-  if(state.resources.coins>=amount){
-    state.resources.coins-=amount;
-    return true;
-  }
-
-  return false;
-
-}
-
-
-
-function log(text){
-
- const box=document.getElementById("log");
-
- if(box.children.length===1 &&
- box.children[0].textContent==="Nothing recorded.")
- box.innerHTML="";
-
-
- let e=document.createElement("div");
- e.textContent="» "+text;
-
- box.prepend(e);
-
-
- while(box.children.length>6)
- box.lastChild.remove();
-
-}
-
-
-
-function floating(text){
-
- let f=document.createElement("div");
-
- f.className="float";
- f.textContent=text;
-
- f.style.left=(50+Math.random()*20-10)+"%";
- f.style.top="60%";
-
-
- document.body.appendChild(f);
-
-
- setTimeout(()=>{
-   f.remove();
- },800);
-
-}
-
-
-
-
-function gather(){
-
- state.combo++;
-
- let amount=state.clickPower;
-
- if(state.combo>=10)
- amount*=2;
-
-
- addResource("paper",amount);
-
- addResource("coins",amount);
-
-
- floating("+"+format(amount)+" paper");
-
-
- checkAchievements();
-
- render();
-
- save();
-
-}
-
-
-
-function production(){
-
- let seconds=.2;
-
-
- // paper workers
-
- if(state.rates.paper){
-
- addResource(
- "paper",
- state.rates.paper*seconds
- );
-
- }
-
-
-
- // ink creation
-
- if(state.resources.paper>0 &&
- state.rates.ink){
-
- let ink=
- Math.min(
- state.rates.ink*seconds,
- state.resources.paper*.1
- );
-
- state.resources.paper-=ink*10;
-
- addResource(
- "ink",
- ink
- );
-
- }
-
-
-
- // books
-
- if(
- state.resources.ink>0 &&
- state.rates.books
- ){
-
- let books=
- Math.min(
- state.rates.books*seconds,
- state.resources.ink*.2
- );
-
-
- state.resources.ink-=books*5;
-
-
- addResource(
- "books",
- books
- );
-
-
- }
-
-
-
- // selling
-
- let income=
-
- state.resources.paper*.001+
- state.resources.ink*.003+
- state.resources.books*.008;
-
-
- addResource(
- "coins",
- income
- );
-
-
-}
-
-
-
-
-function buyUpgrade(id){
-
- let u=DATA.upgrades[id];
-
- let cost=
- Math.floor(
- u.cost*
- Math.pow(
- 1.35,
- state.upgrades[id]
- )
- );
-
-
- if(!spendCoins(cost))
- return;
-
-
-
- state.upgrades[id]++;
-
-
- if(u.effect==="click")
- state.clickPower+=u.power;
-
-
- if(u.effect==="paper")
- state.rates.paper+=u.power;
-
-
- if(u.effect==="books")
- state.rates.books+=u.power;
-
-
- log(
- "Purchased "+u.name
- );
-
-
- render();
-
- save();
-
-}
-
-
-
-
-function archive(){
-
- if(state.resources.coins<5000){
-
- log(
- "The ledger is not valuable enough yet."
- );
-
- return;
-
- }
-
-
-
- state.archive++;
-
- state.resources={
- coins:0,
- paper:0,
- ink:0,
- books:0
- };
-
-
- state.rates={
- paper:0,
- ink:0,
- books:0
- };
-
-
- state.clickPower=
- 1+state.archive*.25;
-
-
- log(
- "A new archive begins. Permanent knowledge gained."
- );
-
-
- render();
-
- save();
-
-}
-
-
-
-
-function checkAchievements(){
-
- achievements.forEach(a=>{
-
- if(
- !unlocked.includes(a.id)
- &&
- a.check(state)
- ){
-
- unlocked.push(a.id);
-
- log(
- "Achievement: "+a.name
- );
-
- }
-
- });
-
-}
-
-
-
-
-function render(){
-
-
-let r=document.getElementById("resources");
-
-
-r.innerHTML="";
-
-
-for(let id in DATA.resources){
-
-
- let d=DATA.resources[id];
-
- let div=document.createElement("div");
-
- div.className="resource";
-
-
- div.innerHTML=`
-
- <span>
- ${d.label}
- </span>
-
- <span class="amount">
- ${format(state.resources[id])}
- </span>
-
- <span class="rate">
- </span>
-
- `;
-
-
- let rate="";
-
-
- if(id==="paper")
- rate=state.rates.paper.toFixed(1)+"/sec";
-
- if(id==="ink")
- rate=state.rates.ink.toFixed(1)+"/sec";
-
- if(id==="books")
- rate=state.rates.books.toFixed(1)+"/sec";
-
-
- div.querySelector(".rate")
- .textContent=rate;
-
-
- r.appendChild(div);
-
-}
-
-
-
-
-let up=document.getElementById("upgrades");
-
-up.innerHTML="";
-
-
-for(let id in DATA.upgrades){
-
-let d=DATA.upgrades[id];
-
-
-let cost=
-Math.floor(
-d.cost*
-Math.pow(
-1.35,
-state.upgrades[id]
-)
-);
-
-
-
-let row=document.createElement("div");
-
-row.className="upgrade";
-
-
-row.innerHTML=`
-
-<div>
-
-<h3>${d.name}</h3>
-
-<p>
-Owned: ${state.upgrades[id]}
-</p>
-
-</div>
-
-
-<button class="buy">
-${cost} coins
-</button>
-
-`;
-
-
-row.querySelector("button")
-.onclick=()=>buyUpgrade(id);
-
-
-row.querySelector("button")
-.disabled=
-state.resources.coins<cost;
-
-
-
-up.appendChild(row);
-
-
-}
-
-
-
-
-
-document.getElementById("prestige")
-.textContent=
-state.archive;
-
-
-
-document.getElementById("bonus")
-.textContent=
-Math.floor(state.archive*25)+"%";
-
-
-
-
-
-let ach=document.getElementById("achievements");
-
-ach.innerHTML="";
-
-
-achievements.forEach(a=>{
-
-
-let div=document.createElement("div");
-
-
-div.textContent=
-(unlocked.includes(a.id)?"✓ ":"○ ")
-+a.name;
-
-
-ach.appendChild(div);
-
-
-});
-
-
-}
-
-
-
-
-
-document
-.getElementById("gather")
-.onclick=gather;
-
-
-
-document
-.getElementById("archive")
-.onclick=archive;
-
-
-
-
-document
-.getElementById("themeBtn")
-.onclick=()=>{
-
-let html=document.documentElement;
-
-let dark=
-html.dataset.theme==="dark";
-
-
-html.dataset.theme=
-dark?"light":"dark";
-
-
-document.getElementById("themeBtn")
-.textContent=
-dark?"DARK MODE":"LIGHT MODE";
-
+/* ============================================================
+   SYSTEMS  (future: src/systems/production.js)
+   Systems read + write GameState. They never touch the DOM.
+   ============================================================ */
+const Systems = {
+  Production: {
+    // Called every tick by GameLoop with elapsed seconds.
+    update(deltaSeconds) {
+      for (const id in GameState.resources) {
+        const res = GameState.resources[id];
+        if (res.rate <= 0) continue;
+        const def = DATA.resources[id];
+
+        let gain = res.rate * deltaSeconds;
+
+        // Some resources (e.g. Books) consume another resource's
+        // stock as fuel. Production is capped by what's available.
+        if (def.consumes) {
+          const fuel = GameState.getResource(def.consumes.resource);
+          const maxByFuel = fuel.amount / def.consumes.ratio;
+          gain = Math.min(gain, maxByFuel);
+          if (gain > 0) GameState.spendResource(def.consumes.resource, gain * def.consumes.ratio);
+        }
+
+        if (gain > 0) GameState.addResource(id, gain);
+      }
+    },
+
+    // Called on manual gather click. Click amount comes from
+    // clickYield, which upgrades like Sharper Quill can raise.
+    // Also realizes an immediate coin bonus, so the coin economy
+    // has a bootstrap path before any automation is owned.
+    gather(id) {
+      const amount = GameState.getResource(id).clickYield || 1;
+      GameState.addResource(id, amount);
+      const def = DATA.resources[id];
+      if (def.coinValue) {
+        GameState.addResource('coins', amount * def.coinValue);
+      }
+      return amount;
+    },
+  },
+
+  // Converts standing production rates into a flowing coin income.
+  // Every resource with a coinValue contributes; coins itself does not.
+  Economy: {
+    updateCoinIncome() {
+      let totalRate = 0;
+      for (const id in DATA.resources) {
+        const def = DATA.resources[id];
+        if (id === 'coins' || !def.coinValue) continue;
+        totalRate += GameState.getResource(id).rate * def.coinValue;
+      }
+      GameState.resources.coins.rate = totalRate;
+    },
+  },
+
+  Upgrades: {
+    // Exponential cost curve — standard for idle games so early
+    // purchases feel cheap and late ones feel earned.
+    getCost(upgradeId) {
+      const def = DATA.upgrades[upgradeId];
+      const owned = GameState.getUpgradeState(upgradeId).owned;
+      return Math.ceil(def.baseCost * Math.pow(def.costGrowth, owned));
+    },
+
+    canAfford(upgradeId) {
+      const def = DATA.upgrades[upgradeId];
+      const cost = this.getCost(upgradeId);
+      return GameState.getResource(def.resource).amount >= cost;
+    },
+
+    purchase(upgradeId) {
+      if (!this.canAfford(upgradeId)) return false;
+      const def = DATA.upgrades[upgradeId];
+      const cost = this.getCost(upgradeId);
+      const targetResource = def.producesResource || def.resource;
+
+      GameState.spendResource(def.resource, cost);
+      if (def.clickBonus) {
+        GameState.raiseClickYield(targetResource, def.clickBonus);
+      } else {
+        GameState.raiseRate(targetResource, def.rateBonus);
+      }
+      GameState.getUpgradeState(upgradeId).owned += 1;
+
+      return true;
+    },
+  },
+
+  Unlocks: {
+    // Resources/upgrades with no condition are unlocked from the start.
+    checkCondition(condition) {
+      if (!condition) return true;
+      if (condition.type === 'totalCollected') {
+        return GameState.getResource(condition.resource).totalCollected >= condition.amount;
+      }
+      return false;
+    },
+
+    progressToward(condition) {
+      if (!condition || condition.type !== 'totalCollected') return 1;
+      const current = GameState.getResource(condition.resource).totalCollected;
+      return Math.min(1, current / condition.amount);
+    },
+
+    isResourceUnlocked(resourceId) {
+      return this.checkCondition(DATA.unlocks[resourceId]);
+    },
+
+    isUpgradeUnlocked(upgradeId) {
+      const requires = DATA.upgrades[upgradeId].requiresUnlocked;
+      if (!requires) return true;
+      return this.isResourceUnlocked(requires);
+    },
+  },
 };
 
+/* ============================================================
+   SAVE MANAGER  (future: src/core/save.js)
+   Persistence only — reads/writes localStorage and GameState.
+   Does not know about DOM or gameplay rules.
+   ============================================================ */
+const SaveManager = {
+  STORAGE_KEY: 'ledgerIdleSave_v1',
 
+  save() {
+    const payload = { resources: {}, upgrades: {}, savedAt: UTILS.now() };
+    for (const id in GameState.resources) {
+      const r = GameState.resources[id];
+      payload.resources[id] = { amount: r.amount, rate: r.rate, totalCollected: r.totalCollected, clickYield: r.clickYield };
+    }
+    for (const id in GameState.upgrades) {
+      payload.upgrades[id] = { owned: GameState.upgrades[id].owned };
+    }
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(payload));
+      return true;
+    } catch (err) {
+      console.warn('Save failed:', err);
+      return false;
+    }
+  },
 
+  load() {
+    const raw = localStorage.getItem(this.STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (err) {
+      console.warn('Save file corrupted, starting fresh:', err);
+      return null;
+    }
+  },
 
+  // Merges saved values onto freshly-initialized GameState.
+  // Uses ?? fallbacks so a save from an older version (missing a
+  // field that didn't exist yet) never crashes the load.
+  applyToState(saveData) {
+    if (!saveData) return;
+    for (const id in GameState.resources) {
+      const saved = saveData.resources && saveData.resources[id];
+      if (!saved) continue;
+      GameState.resources[id].amount = saved.amount ?? GameState.resources[id].amount;
+      GameState.resources[id].rate = saved.rate ?? GameState.resources[id].rate;
+      GameState.resources[id].totalCollected = saved.totalCollected ?? GameState.resources[id].totalCollected;
+      GameState.resources[id].clickYield = saved.clickYield ?? GameState.resources[id].clickYield;
+    }
+    for (const id in GameState.upgrades) {
+      const saved = saveData.upgrades && saveData.upgrades[id];
+      if (!saved) continue;
+      GameState.upgrades[id].owned = saved.owned ?? 0;
+    }
+  },
 
-// offline earnings
+  clear() {
+    localStorage.removeItem(this.STORAGE_KEY);
+  },
+};
 
-let elapsed=
-(Date.now()-state.lastSave)/1000;
+/* ============================================================
+   UI  (future: src/ui/renderer.js, src/ui/theme.js)
+   The ONLY code allowed to touch the DOM.
+   Reads from GameState, never writes to it directly.
+   ============================================================ */
+const UI = {
+  els: {},
+  loggedUnlocks: new Set(),
 
+  cacheEls() {
+    this.els.gainFlash = document.getElementById('gainFlash');
+    this.els.gatherBtn = document.getElementById('gatherBtn');
+    this.els.themeToggle = document.getElementById('themeToggle');
+    this.els.resourcesList = document.getElementById('resourcesList');
+    this.els.upgradesList = document.getElementById('upgradesList');
+    this.els.eventLog = document.getElementById('eventLog');
+  },
 
-if(elapsed>5){
+  render() {
+    this.renderResources();
+    this.renderUpgrades();
+  },
 
-let gain=
-elapsed*
-(
-state.rates.paper+
-state.rates.ink+
-state.rates.books
-);
+  // Called once at startup, after a save (if any) has been applied.
+  // Silently sets locked/unlocked visuals to match loaded progress
+  // without firing "just unlocked!" log events for old news.
+  primeUnlockedState() {
+    for (const id in DATA.resources) {
+      if (!Systems.Unlocks.isResourceUnlocked(id)) continue;
+      this.loggedUnlocks.add(id);
+      const row = this.els.resourcesList.querySelector(`[data-resource="${id}"]`);
+      row.querySelector('.locked-view').classList.add('hidden');
+      row.querySelector('.unlocked-view').classList.remove('hidden');
+    }
+  },
 
-state.resources.coins+=gain;
+  // ---- Resources ----
 
-log(
-"Offline earnings: +"+
-format(gain)+" coins"
-);
+  buildResourceCards() {
+    this.els.resourcesList.innerHTML = '';
+    for (const id in DATA.resources) {
+      const row = document.createElement('div');
+      row.className = 'resource-row';
+      row.dataset.resource = id;
+      row.innerHTML = `
+        <div class="locked-view">
+          <div class="resource-name">🔒 ???</div>
+          <div class="unlock-progress-track"><div class="unlock-progress-fill"></div></div>
+          <div class="unlock-progress-label"></div>
+        </div>
+        <div class="unlocked-view hidden">
+          <div>
+            <div class="resource-name">${DATA.resources[id].label}</div>
+            <div class="resource-amount">0</div>
+          </div>
+          <div class="resource-rate">+0.0/sec</div>
+        </div>
+      `;
+      this.els.resourcesList.appendChild(row);
+    }
+  },
 
+  renderResources() {
+    for (const id in DATA.resources) {
+      const row = this.els.resourcesList.querySelector(`[data-resource="${id}"]`);
+      const isUnlocked = Systems.Unlocks.isResourceUnlocked(id);
+      const lockedView = row.querySelector('.locked-view');
+      const unlockedView = row.querySelector('.unlocked-view');
+
+      if (!isUnlocked) {
+        const condition = DATA.unlocks[id];
+        const pct = Math.floor(Systems.Unlocks.progressToward(condition) * 100);
+        row.querySelector('.unlock-progress-fill').style.width = `${pct}%`;
+        row.querySelector('.unlock-progress-label').textContent =
+          `${Math.floor(GameState.getResource(condition.resource).totalCollected)} / ${condition.amount} ${DATA.resources[condition.resource].label} collected`;
+        continue;
+      }
+
+      // Transition moment: first render after unlocking.
+      if (!this.loggedUnlocks.has(id)) {
+        this.loggedUnlocks.add(id);
+        lockedView.classList.add('hidden');
+        unlockedView.classList.remove('hidden');
+        const condition = DATA.unlocks[id];
+        if (condition) this.logEvent(condition.logMessage); // silent for start-unlocked resources
+      }
+
+      const res = GameState.getResource(id);
+      const def = DATA.resources[id];
+      row.querySelector('.resource-amount').textContent = UTILS.formatNumber(res.amount);
+      let rateText = `+${res.rate.toFixed(1)}/sec`;
+      if (def.consumes) {
+        rateText += ` (uses ${def.consumes.ratio}x ${DATA.resources[def.consumes.resource].label}/sec)`;
+      }
+      row.querySelector('.resource-rate').textContent = rateText;
+    }
+  },
+
+  // ---- Upgrades ----
+
+  buildUpgradeRows() {
+    this.els.upgradesList.innerHTML = '';
+    for (const id in DATA.upgrades) {
+      const def = DATA.upgrades[id];
+      const row = document.createElement('div');
+      row.className = 'upgrade-row hidden'; // revealed once unlocked
+      row.dataset.upgrade = id;
+      row.innerHTML = `
+        <div class="upgrade-info">
+          <h3>${def.label}</h3>
+          <p>${def.description}</p>
+          <div class="upgrade-owned"></div>
+        </div>
+        <button class="buy-btn" type="button"></button>
+      `;
+      row.querySelector('.buy-btn').addEventListener('click', () => {
+        if (Systems.Upgrades.purchase(id)) {
+          this.render();
+        }
+      });
+      this.els.upgradesList.appendChild(row);
+    }
+  },
+
+  renderUpgrades() {
+    for (const id in DATA.upgrades) {
+      const def = DATA.upgrades[id];
+      const row = this.els.upgradesList.querySelector(`[data-upgrade="${id}"]`);
+      const unlocked = Systems.Unlocks.isUpgradeUnlocked(id);
+      row.classList.toggle('hidden', !unlocked);
+      if (!unlocked) continue;
+
+      const owned = GameState.getUpgradeState(id).owned;
+      const cost = Systems.Upgrades.getCost(id);
+      const affordable = Systems.Upgrades.canAfford(id);
+      const producedLabel = DATA.resources[def.producesResource || def.resource].label;
+      const isClickUpgrade = !!def.clickBonus;
+      const bonusAmount = isClickUpgrade ? def.clickBonus : def.rateBonus;
+      const bonusUnit = isClickUpgrade ? 'per click' : 'per sec';
+
+      row.querySelector('.upgrade-owned').textContent =
+        `owned: ${owned}  ·  +${bonusAmount} ${producedLabel} ${bonusUnit} each`;
+      const btn = row.querySelector('.buy-btn');
+      btn.textContent = `${cost} ${DATA.resources[def.resource].label}`;
+      btn.disabled = !affordable;
+    }
+  },
+
+  // ---- Event log ----
+
+  logEvent(message) {
+    if (this.els.eventLog.querySelector('.log-empty')) {
+      this.els.eventLog.innerHTML = '';
+    }
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.textContent = `» ${message}`;
+    this.els.eventLog.prepend(entry);
+
+    // Cap the visible log so it stays a ledger, not a feed.
+    const entries = this.els.eventLog.querySelectorAll('.log-entry');
+    if (entries.length > 5) entries[entries.length - 1].remove();
+  },
+
+  // ---- Gain flash / gather / theme ----
+
+  flashGain(amount) {
+    const flash = this.els.gainFlash;
+    flash.textContent = `+${amount}`;
+    flash.classList.remove('show');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+  },
+
+  bindEvents() {
+    this.els.gatherBtn.addEventListener('click', () => {
+      const gained = Systems.Production.gather('paper');
+      this.flashGain(gained);
+      this.render();
+    });
+
+    this.els.themeToggle.addEventListener('click', () => {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      this.els.themeToggle.textContent = isDark ? 'DARK MODE' : 'LIGHT MODE';
+    });
+  },
+};
+
+/* ============================================================
+   GAME LOOP  (future: src/core/loop.js)
+   Ties Systems + UI together on a fixed cadence.
+   Uses real elapsed time so this same delta math will later
+   power offline-progress calculation without changes.
+   ============================================================ */
+const GameLoop = {
+  lastTick: 0,
+
+  start() {
+    this.lastTick = UTILS.now();
+    setInterval(() => this.tick(), 200); // 5 ticks/sec
+  },
+
+  tick() {
+    const nowTs = UTILS.now();
+    const deltaSeconds = (nowTs - this.lastTick) / 1000;
+    this.lastTick = nowTs;
+
+    Systems.Economy.updateCoinIncome();
+    Systems.Production.update(deltaSeconds);
+    UI.render();
+  },
+};
+
+/* ============================================================
+   APP ENTRY  (future: src/core/main.js)
+   ============================================================ */
+function initApp() {
+  GameState.init();
+  SaveManager.applyToState(SaveManager.load());
+
+  UI.cacheEls();
+  UI.buildResourceCards();
+  UI.buildUpgradeRows();
+  UI.primeUnlockedState();
+  UI.bindEvents();
+  UI.render();
+
+  GameLoop.start();
+
+  // Autosave on an interval, and on the way out, so progress
+  // survives both a long idle session and a closed tab.
+  setInterval(() => SaveManager.save(), 5000);
+  window.addEventListener('beforeunload', () => SaveManager.save());
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (confirm('Erase all saved progress on this device? This cannot be undone.')) {
+      SaveManager.clear();
+      location.reload();
+    }
+  });
 }
 
-
-
-
-setInterval(()=>{
-
-production();
-
-checkAchievements();
-
-render();
-
-save();
-
-
-state.lastSave=Date.now();
-
-
-},200);
-
-
-
-
-render();
-
-
+document.addEventListener('DOMContentLoaded', initApp);
 </script>
 
 </body>
