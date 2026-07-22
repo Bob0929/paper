@@ -291,6 +291,61 @@
     padding-left: 0;
     font-style: italic;
   }
+
+  .market-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px dashed var(--paper-line);
+  }
+  .market-row:last-child { border-bottom: none; }
+
+  .market-info h3 {
+    margin: 0 0 0.15rem;
+    font-size: 0.95rem;
+  }
+  .market-info p {
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+  }
+
+  .trade-btn {
+    flex-shrink: 0;
+    min-width: 84px;
+    padding: 0.55rem 0.7rem;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  }
+  .trade-btn:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+  }
+  .trade-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed var(--paper-line);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row span:first-child { color: var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -312,8 +367,18 @@
   </div>
 
   <div class="ledger-card">
+    <div class="section-label">Market</div>
+    <div id="marketList"></div>
+  </div>
+
+  <div class="ledger-card">
     <div class="section-label">Upgrades</div>
     <div id="upgradesList"></div>
+  </div>
+
+  <div class="ledger-card">
+    <div class="section-label">Statistics</div>
+    <div id="statsList"></div>
   </div>
 
   <div class="ledger-card">
@@ -321,7 +386,7 @@
     <div id="eventLog"><div class="log-entry log-empty">Nothing recorded yet.</div></div>
   </div>
 
-  <footer>tier 3 of 7 — books &nbsp;·&nbsp; <button id="resetBtn" type="button">reset progress</button></footer>
+  <footer>v1 complete &nbsp;·&nbsp; <button id="resetBtn" type="button">reset progress</button></footer>
 </div>
 
 <script>
@@ -347,15 +412,13 @@ const DATA = {
       startingAmount: 0,
       startingRate: 0,
       startingClickYield: 1, // paper gained per manual gather click
-      startingAutoSellRate: 0.2, // paper/sec auto-sold once unlocked
-      coinValue: 1,   // coins earned per unit sold
+      coinValue: 1,   // trade value used by the Market (coins per unit)
     },
     ink: {
       id: 'ink',
       label: 'Ink',
       startingAmount: 0,
       startingRate: 0,
-      startingAutoSellRate: 0.05,
       coinValue: 3,
     },
     books: {
@@ -363,7 +426,6 @@ const DATA = {
       label: 'Books',
       startingAmount: 0,
       startingRate: 0,
-      startingAutoSellRate: 0.02,
       coinValue: 8,
       // Producing books also drains ink stock. If ink runs dry,
       // book production stalls until more ink is on hand.
@@ -387,6 +449,19 @@ const DATA = {
       logMessage: 'Enough ink on hand to start binding proper books. Books unlocked.',
     },
   },
+
+  // Every conversion the Market offers. Nothing here is automatic —
+  // each one is a manual trade the player triggers with a click.
+  // Exchange rates aren't hardcoded per pair: Systems.Market prices
+  // every trade using each resource's coinValue, so ink (coinValue 3)
+  // naturally trades for 3x what paper (coinValue 1) does, in either
+  // direction. Adding a new tradeable pair later is one line here.
+  marketConversions: [
+    { id: 'paperToCoins', from: 'paper', to: 'coins', label: 'Sell Paper' },
+    { id: 'inkToCoins', from: 'ink', to: 'coins', label: 'Sell Ink' },
+    { id: 'booksToCoins', from: 'books', to: 'coins', label: 'Sell Books' },
+    { id: 'inkToPaper', from: 'ink', to: 'paper', label: 'Trade Ink for Paper' },
+  ],
 
   // Adding a new upgrade later = adding a new entry here.
   // No other code needs to change for it to appear and function.
@@ -456,6 +531,15 @@ const UTILS = {
   now() {
     return Date.now();
   },
+
+  formatDuration(totalSeconds) {
+    const s = Math.floor(totalSeconds);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ${s % 60}s`;
+    const h = Math.floor(m / 60);
+    return `${h}h ${m % 60}m`;
+  },
 };
 
 /* ============================================================
@@ -465,6 +549,7 @@ const UTILS = {
 const GameState = {
   resources: {},
   upgrades: {},
+  totalPlaytimeSeconds: 0,
 
   init() {
     for (const key in DATA.resources) {
@@ -537,30 +622,40 @@ const Systems = {
 
     // Called on manual gather click. Click amount comes from
     // clickYield, which upgrades like Sharper Quill can raise.
-    // Also realizes an immediate coin bonus, so the coin economy
-    // has a bootstrap path before any automation is owned.
+    // This only ever produces the resource itself — turning it
+    // into coins is a separate, deliberate action via the Market.
     gather(id) {
       const amount = GameState.getResource(id).clickYield || 1;
       GameState.addResource(id, amount);
-      const def = DATA.resources[id];
-      if (def.coinValue) {
-        GameState.addResource('coins', amount * def.coinValue);
-      }
       return amount;
     },
   },
 
-  // Converts standing production rates into a flowing coin income.
-  // Every resource with a coinValue contributes; coins itself does not.
-  Economy: {
-    updateCoinIncome() {
-      let totalRate = 0;
-      for (const id in DATA.resources) {
-        const def = DATA.resources[id];
-        if (id === 'coins' || !def.coinValue) continue;
-        totalRate += GameState.getResource(id).rate * def.coinValue;
-      }
-      GameState.resources.coins.rate = totalRate;
+  // Every trade here is player-initiated — nothing sells itself.
+  // Prices are derived from each resource's coinValue, so the same
+  // pricing logic works for any pair without a hardcoded rate table.
+  Market: {
+    // 1 unit of value = 1 coin. Coins are priced against themselves.
+    valueOf(resourceId) {
+      const def = DATA.resources[resourceId];
+      return (def && def.coinValue) || 1;
+    },
+
+    // How much of `to` you'd get for the full current stock of `from`.
+    quoteFullStock(fromId, toId) {
+      const stock = GameState.getResource(fromId).amount;
+      return stock * (this.valueOf(fromId) / this.valueOf(toId));
+    },
+
+    // Trades the player's ENTIRE current stock of `from` into `to`,
+    // at the fair-value exchange rate. Returns the amount gained.
+    tradeFullStock(fromId, toId) {
+      const available = GameState.getResource(fromId).amount;
+      if (available <= 0) return 0;
+      const gained = available * (this.valueOf(fromId) / this.valueOf(toId));
+      GameState.spendResource(fromId, available);
+      GameState.addResource(toId, gained);
+      return gained;
     },
   },
 
@@ -634,7 +729,12 @@ const SaveManager = {
   STORAGE_KEY: 'ledgerIdleSave_v1',
 
   save() {
-    const payload = { resources: {}, upgrades: {}, savedAt: UTILS.now() };
+    const payload = {
+      resources: {},
+      upgrades: {},
+      totalPlaytimeSeconds: GameState.totalPlaytimeSeconds,
+      savedAt: UTILS.now(),
+    };
     for (const id in GameState.resources) {
       const r = GameState.resources[id];
       payload.resources[id] = { amount: r.amount, rate: r.rate, totalCollected: r.totalCollected, clickYield: r.clickYield };
@@ -667,6 +767,7 @@ const SaveManager = {
   // field that didn't exist yet) never crashes the load.
   applyToState(saveData) {
     if (!saveData) return;
+    GameState.totalPlaytimeSeconds = saveData.totalPlaytimeSeconds ?? GameState.totalPlaytimeSeconds;
     for (const id in GameState.resources) {
       const saved = saveData.resources && saveData.resources[id];
       if (!saved) continue;
@@ -702,12 +803,16 @@ const UI = {
     this.els.themeToggle = document.getElementById('themeToggle');
     this.els.resourcesList = document.getElementById('resourcesList');
     this.els.upgradesList = document.getElementById('upgradesList');
+    this.els.marketList = document.getElementById('marketList');
+    this.els.statsList = document.getElementById('statsList');
     this.els.eventLog = document.getElementById('eventLog');
   },
 
   render() {
     this.renderResources();
     this.renderUpgrades();
+    this.renderMarket();
+    this.renderStats();
   },
 
   // Called once at startup, after a save (if any) has been applied.
@@ -835,6 +940,70 @@ const UI = {
     }
   },
 
+  // ---- Market ----
+  // Every conversion is a manual, player-initiated trade — nothing
+  // here runs on its own. Rows are gated behind the same unlock
+  // check as the resource being traded away.
+
+  buildMarketRows() {
+    this.els.marketList.innerHTML = '';
+    for (const conv of DATA.marketConversions) {
+      const row = document.createElement('div');
+      row.className = 'market-row hidden'; // revealed once `from` is unlocked
+      row.dataset.conversion = conv.id;
+      row.innerHTML = `
+        <div class="market-info">
+          <h3>${conv.label}</h3>
+          <p></p>
+        </div>
+        <button class="trade-btn" type="button">Trade</button>
+      `;
+      row.querySelector('.trade-btn').addEventListener('click', () => {
+        const gained = Systems.Market.tradeFullStock(conv.from, conv.to);
+        if (gained > 0) this.render();
+      });
+      this.els.marketList.appendChild(row);
+    }
+  },
+
+  renderMarket() {
+    for (const conv of DATA.marketConversions) {
+      const row = this.els.marketList.querySelector(`[data-conversion="${conv.id}"]`);
+      const unlocked = Systems.Unlocks.isResourceUnlocked(conv.from);
+      row.classList.toggle('hidden', !unlocked);
+      if (!unlocked) continue;
+
+      const stock = GameState.getResource(conv.from).amount;
+      const quote = Systems.Market.quoteFullStock(conv.from, conv.to);
+      const fromLabel = DATA.resources[conv.from].label;
+      const toLabel = DATA.resources[conv.to].label;
+
+      row.querySelector('.market-info p').textContent =
+        `${UTILS.formatNumber(stock)} ${fromLabel} → ${UTILS.formatNumber(quote)} ${toLabel}`;
+      row.querySelector('.trade-btn').disabled = stock <= 0;
+    }
+  },
+
+  // ---- Statistics ----
+  // Rebuilt fresh each render — it's small, cheap, and always
+  // reflects current lifetime totals without needing per-field
+  // element caching like the other sections.
+
+  renderStats() {
+    let html = '';
+    for (const id in DATA.resources) {
+      if (!Systems.Unlocks.isResourceUnlocked(id)) continue;
+      const label = DATA.resources[id].label;
+      const total = GameState.getResource(id).totalCollected;
+      html += `<div class="stat-row"><span>${label} collected (lifetime)</span><span>${UTILS.formatNumber(total)}</span></div>`;
+    }
+    let upgradesOwned = 0;
+    for (const id in GameState.upgrades) upgradesOwned += GameState.upgrades[id].owned;
+    html += `<div class="stat-row"><span>Upgrades owned</span><span>${upgradesOwned}</span></div>`;
+    html += `<div class="stat-row"><span>Time played</span><span>${UTILS.formatDuration(GameState.totalPlaytimeSeconds)}</span></div>`;
+    this.els.statsList.innerHTML = html;
+  },
+
   // ---- Event log ----
 
   logEvent(message) {
@@ -896,8 +1065,8 @@ const GameLoop = {
     const deltaSeconds = (nowTs - this.lastTick) / 1000;
     this.lastTick = nowTs;
 
-    Systems.Economy.updateCoinIncome();
     Systems.Production.update(deltaSeconds);
+    GameState.totalPlaytimeSeconds += deltaSeconds;
     UI.render();
   },
 };
@@ -905,16 +1074,39 @@ const GameLoop = {
 /* ============================================================
    APP ENTRY  (future: src/core/main.js)
    ============================================================ */
+// Offline progress is capped so a save from weeks ago doesn't
+// produce an absurd, meaningless number on return.
+const OFFLINE_PROGRESS_CAP_SECONDS = 8 * 60 * 60; // 8 hours
+
 function initApp() {
   GameState.init();
-  SaveManager.applyToState(SaveManager.load());
+  const saveData = SaveManager.load();
+  SaveManager.applyToState(saveData);
 
   UI.cacheEls();
   UI.buildResourceCards();
   UI.buildUpgradeRows();
+  UI.buildMarketRows();
   UI.primeUnlockedState();
   UI.bindEvents();
+
+  // Simulate the time that passed while the page was closed by
+  // running one large production tick, reusing the exact same
+  // Systems.Production.update() the live loop calls every 200ms —
+  // no separate offline math to keep in sync.
+  if (saveData && saveData.savedAt) {
+    const elapsedSeconds = (UTILS.now() - saveData.savedAt) / 1000;
+    if (elapsedSeconds > 3) {
+      const cappedSeconds = Math.min(elapsedSeconds, OFFLINE_PROGRESS_CAP_SECONDS);
+      Systems.Production.update(cappedSeconds);
+      UI.pendingWelcomeBackMessage = `Welcome back — ${UTILS.formatDuration(elapsedSeconds)} passed while you were away.`;
+    }
+  }
+
   UI.render();
+  if (UI.pendingWelcomeBackMessage) {
+    UI.logEvent(UI.pendingWelcomeBackMessage);
+  }
 
   GameLoop.start();
 
