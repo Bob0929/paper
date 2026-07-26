@@ -312,6 +312,12 @@
     font-size: 0.72rem;
     color: var(--ink-soft);
   }
+  .market-info .rate-line {
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+  }
+  .market-info .rate-line.price-up { color: var(--ink); }
+  .market-info .rate-line.price-down { color: var(--accent); }
 
   .trade-btn {
     flex-shrink: 0;
@@ -635,10 +641,53 @@ const Systems = {
   // Prices are derived from each resource's coinValue, so the same
   // pricing logic works for any pair without a hardcoded rate table.
   Market: {
-    // 1 unit of value = 1 coin. Coins are priced against themselves.
+    // Price drift: each sellable resource's value wanders between
+    // PRICE_MIN and PRICE_MAX of its base coinValue. This state is
+    // intentionally NOT saved — it's cosmetic market noise, not
+    // progress, so it resets fresh each session rather than adding
+    // another field to the save schema.
+    PRICE_MIN: 0.7,
+    PRICE_MAX: 1.4,
+    EASE_SPEED: 0.3,     // how quickly price eases toward its target
+    priceState: {},      // { resourceId: { multiplier, target, timer } }
+
+    randomRetargetSeconds() {
+      return 6 + Math.random() * 8; // 6-14s between target changes
+    },
+
+    initPrices() {
+      for (const id in DATA.resources) {
+        if (!DATA.resources[id].coinValue) continue; // coins itself, etc.
+        this.priceState[id] = {
+          multiplier: 1,
+          target: 1,
+          timer: this.randomRetargetSeconds(),
+        };
+      }
+    },
+
+    updatePrices(deltaSeconds) {
+      for (const id in this.priceState) {
+        const state = this.priceState[id];
+        state.timer -= deltaSeconds;
+        if (state.timer <= 0) {
+          state.target = this.PRICE_MIN + Math.random() * (this.PRICE_MAX - this.PRICE_MIN);
+          state.timer = this.randomRetargetSeconds();
+        }
+        // Ease toward the target rather than jumping, so price moves
+        // read as a smooth drift instead of a jittery random walk.
+        state.multiplier += (state.target - state.multiplier) * Math.min(1, deltaSeconds * this.EASE_SPEED);
+      }
+    },
+
+    // 1 unit of value = 1 coin. Coins are priced against themselves
+    // and never drift. Every other resource's value includes its
+    // current price multiplier.
     valueOf(resourceId) {
       const def = DATA.resources[resourceId];
-      return (def && def.coinValue) || 1;
+      const base = (def && def.coinValue) || 1;
+      const state = this.priceState[resourceId];
+      return state ? base * state.multiplier : base;
     },
 
     // How much of `to` you'd get for the full current stock of `from`.
@@ -648,7 +697,7 @@ const Systems = {
     },
 
     // Trades the player's ENTIRE current stock of `from` into `to`,
-    // at the fair-value exchange rate. Returns the amount gained.
+    // at the current live exchange rate. Returns the amount gained.
     tradeFullStock(fromId, toId) {
       const available = GameState.getResource(fromId).amount;
       if (available <= 0) return 0;
@@ -954,7 +1003,8 @@ const UI = {
       row.innerHTML = `
         <div class="market-info">
           <h3>${conv.label}</h3>
-          <p></p>
+          <p class="rate-line"></p>
+          <p class="quote-line"></p>
         </div>
         <button class="trade-btn" type="button">Trade</button>
       `;
@@ -977,8 +1027,17 @@ const UI = {
       const quote = Systems.Market.quoteFullStock(conv.from, conv.to);
       const fromLabel = DATA.resources[conv.from].label;
       const toLabel = DATA.resources[conv.to].label;
+      const unitRate = Systems.Market.valueOf(conv.from) / Systems.Market.valueOf(conv.to);
+      const priceState = Systems.Market.priceState[conv.from];
+      const multiplier = priceState ? priceState.multiplier : 1;
 
-      row.querySelector('.market-info p').textContent =
+      const rateLine = row.querySelector('.rate-line');
+      const trend = multiplier > 1.05 ? '▲' : multiplier < 0.95 ? '▼' : '·';
+      rateLine.textContent = `${trend} 1 ${fromLabel} ≈ ${unitRate.toFixed(2)} ${toLabel}`;
+      rateLine.classList.toggle('price-up', multiplier > 1.05);
+      rateLine.classList.toggle('price-down', multiplier < 0.95);
+
+      row.querySelector('.quote-line').textContent =
         `${UTILS.formatNumber(stock)} ${fromLabel} → ${UTILS.formatNumber(quote)} ${toLabel}`;
       row.querySelector('.trade-btn').disabled = stock <= 0;
     }
@@ -1066,6 +1125,7 @@ const GameLoop = {
     this.lastTick = nowTs;
 
     Systems.Production.update(deltaSeconds);
+    Systems.Market.updatePrices(deltaSeconds);
     GameState.totalPlaytimeSeconds += deltaSeconds;
     UI.render();
   },
@@ -1087,6 +1147,7 @@ function initApp() {
   UI.buildResourceCards();
   UI.buildUpgradeRows();
   UI.buildMarketRows();
+  Systems.Market.initPrices();
   UI.primeUnlockedState();
   UI.bindEvents();
 
@@ -1112,11 +1173,19 @@ function initApp() {
 
   // Autosave on an interval, and on the way out, so progress
   // survives both a long idle session and a closed tab.
-  setInterval(() => SaveManager.save(), 5000);
-  window.addEventListener('beforeunload', () => SaveManager.save());
+  const autosaveIntervalId = setInterval(() => SaveManager.save(), 5000);
+  const autosaveOnUnload = () => SaveManager.save();
+  window.addEventListener('beforeunload', autosaveOnUnload);
 
   document.getElementById('resetBtn').addEventListener('click', () => {
     if (confirm('Erase all saved progress on this device? This cannot be undone.')) {
+      // location.reload() fires beforeunload, which would otherwise
+      // autosave the current (pre-reset) state right back into
+      // localStorage a moment after we clear it. Both the interval
+      // and the unload handler must be torn down first, or the
+      // reset silently undoes itself.
+      clearInterval(autosaveIntervalId);
+      window.removeEventListener('beforeunload', autosaveOnUnload);
       SaveManager.clear();
       location.reload();
     }
