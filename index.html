@@ -974,6 +974,10 @@ const UI = {
     this.els.marketList = document.getElementById('marketList');
     this.els.statsList = document.getElementById('statsList');
     this.els.eventLog = document.getElementById('eventLog');
+
+    this.els.helpBtn = document.getElementById('helpBtn');
+    this.els.hintPopup = document.getElementById('hintPopup');
+    this.els.hintText = document.getElementById('hintText');
   },
 
   render() {
@@ -1220,6 +1224,11 @@ const UI = {
       const isDark = html.getAttribute('data-theme') === 'dark';
       html.setAttribute('data-theme', isDark ? 'light' : 'dark');
       this.els.themeToggle.textContent = isDark ? 'DARK MODE' : 'LIGHT MODE';
+    });
+
+    this.els.helpBtn.addEventListener('click', () => {
+      this.els.hintText.textContent = Systems.Hints.getCurrentHint();
+      this.els.hintPopup.classList.toggle('hidden');
     });
   },
 };
