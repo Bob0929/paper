@@ -362,6 +362,44 @@
   }
   .stat-row:last-child { border-bottom: none; }
   .stat-row span:first-child { color: var(--ink-soft); }
+
+  #helpBtn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: 'Iowan Old Style', Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--shadow);
+    z-index: 50;
+    transition: background-color 0.2s ease;
+  }
+  #helpBtn:hover { background: var(--accent); }
+
+  .hint-popup {
+    position: fixed;
+    bottom: 5.3rem;
+    right: 1.5rem;
+    max-width: 250px;
+    background: var(--card-bg);
+    border: 1px solid var(--paper-line);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 0.9rem 1rem;
+    box-shadow: 0 3px 10px var(--shadow);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--ink);
+    z-index: 50;
+  }
+  .hint-popup.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -410,6 +448,11 @@
   </div>
 
   <footer>v1 complete &nbsp;·&nbsp; <button id="resetBtn" type="button">reset progress</button></footer>
+
+  <button id="helpBtn" type="button" aria-label="What should I do next?">?</button>
+  <div id="hintPopup" class="hint-popup hidden">
+    <p id="hintText"></p>
+  </div>
 </div>
 
 <script>
@@ -782,6 +825,65 @@ const Systems = {
       const requires = DATA.upgrades[upgradeId].requiresUnlocked;
       if (!requires) return true;
       return this.isResourceUnlocked(requires);
+    },
+  },
+
+  // On-demand help. Not a scripted tutorial — every rule is checked
+  // fresh against live GameState each time the player clicks Help,
+  // so a brand-new player and a 20-minutes-in player get different,
+  // correctly-targeted advice from the same button. Rules are
+  // checked in order; the first one that matches wins.
+  Hints: {
+    rules: [
+      {
+        id: 'start',
+        check: () => GameState.getResource('paper').totalCollected < 10,
+        message: 'Click GATHER PAPER a few times to build up a stock.',
+      },
+      {
+        id: 'sell-paper',
+        check: () =>
+          GameState.getResource('paper').amount > 0 &&
+          GameState.getResource('coins').totalCollected <= 0,
+        message: 'Open the Market and hit "Sell Paper" to turn that stock into coins.',
+      },
+      {
+        id: 'buy-apprentice',
+        check: () =>
+          GameState.getUpgradeState('apprentice').owned === 0 &&
+          GameState.getResource('coins').amount >= Systems.Upgrades.getCost('apprentice'),
+        message: 'You can afford an Apprentice in Upgrades — it gathers paper automatically, even while you\'re away.',
+      },
+      {
+        id: 'progress-to-ink',
+        check: () => !Systems.Unlocks.isResourceUnlocked('ink'),
+        message: 'Keep collecting paper — the Resources card shows how much lifetime paper unlocks Ink.',
+      },
+      {
+        id: 'buy-ink-merchant',
+        check: () => GameState.getUpgradeState('inkMerchant').owned === 0,
+        message: 'Ink is unlocked — buy an Ink Merchant in Upgrades to start producing it.',
+      },
+      {
+        id: 'progress-to-books',
+        check: () => !Systems.Unlocks.isResourceUnlocked('books'),
+        message: 'Keep producing ink — enough lifetime ink unlocks Books next.',
+      },
+      {
+        id: 'buy-bindery',
+        check: () => GameState.getUpgradeState('bindery').owned === 0,
+        message: 'Books are unlocked — a Bindery turns ink into books, so keep an Ink Merchant running too.',
+      },
+      {
+        id: 'fallback',
+        check: () => true,
+        message: 'Watch the Market rate lines — prices drift, so timing your trades earns more than selling on autopilot.',
+      },
+    ],
+
+    getCurrentHint() {
+      const match = this.rules.find(rule => rule.check());
+      return match ? match.message : this.rules[this.rules.length - 1].message;
     },
   },
 };
