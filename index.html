@@ -84,6 +84,26 @@
     font-style: italic;
   }
 
+  .design-note-text {
+    margin: 0 0 0.9rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  .design-note-source {
+    margin: 0;
+    padding-top: 0.7rem;
+    border-top: 1px dashed var(--paper-line);
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .design-note-source a {
+    color: var(--accent);
+  }
+
   #themeToggle {
     border: 1px solid var(--ink-soft);
     background: transparent;
@@ -440,6 +460,30 @@
   <div class="ledger-card">
     <div class="section-label">Statistics</div>
     <div id="statsList"></div>
+  </div>
+
+  <div class="ledger-card">
+    <div class="section-label">Design Note</div>
+    <p class="design-note-text">
+      One idea from Hunicke, LeBlanc, and Zubek's MDA framework is that a game's felt
+      experience (the "aesthetics") comes from dynamics — how mechanics actually play out
+      at runtime — not from the mechanics themselves. A reader encounters this directly in
+      Ledger's split between the Upgrades card, where paper, ink, and books are gathered
+      automatically once purchased, and the Market card, where every trade is a manual
+      click at a live, drifting price. My interpretation: automating the repetitive action
+      (clicking Gather) while keeping the one meaningful choice (when to trade) manual is
+      what should produce a feeling of ongoing agency rather than passive waiting. The open
+      limitation is that I haven't verified this with an actual player — it's possible one
+      manual decision point isn't enough to sustain that feeling past the first few
+      minutes. This reasoning is what caused me to reject a flat automatic-sell rate I'd
+      built earlier: a fixed rate would have quietly removed the only decision the player
+      had left.
+    </p>
+    <p class="design-note-source">
+      Source: Hunicke, R., LeBlanc, M., &amp; Zubek, R. (2004). <em>MDA: A Formal Approach
+      to Game Design and Game Research.</em>
+      <a href="https://users.cs.northwestern.edu/~hunicke/MDA.pdf" target="_blank" rel="noopener">users.cs.northwestern.edu/~hunicke/MDA.pdf</a>
+    </p>
   </div>
 
   <div class="ledger-card">
@@ -920,12 +964,12 @@ const SaveManager = {
   },
 
   load() {
-    const raw = localStorage.getItem(this.STORAGE_KEY);
-    if (!raw) return null;
     try {
+      const raw = localStorage.getItem(this.STORAGE_KEY);
+      if (!raw) return null;
       return JSON.parse(raw);
     } catch (err) {
-      console.warn('Save file corrupted, starting fresh:', err);
+      console.warn('Save unavailable or corrupted, starting fresh:', err);
       return null;
     }
   },
