@@ -13,7 +13,7 @@
     --paper:        #FAF7EF;
     --paper-line:   #DEDAC9;
     --ink:          #23221E;
-    --ink-soft:     #6B675C;
+    --ink-soft:     #5C594E;
     --accent:       #A83E32;   /* ledger red, used sparingly */
     --accent-soft:  #C97A6D;
     --card-bg:      #FFFFFF;
@@ -96,7 +96,7 @@
     padding-top: 0.7rem;
     border-top: 1px dashed var(--paper-line);
     font-family: 'Courier New', monospace;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--ink-soft);
     line-height: 1.5;
   }
@@ -227,6 +227,11 @@
     border-bottom: 1px dashed var(--paper-line);
   }
   .upgrade-row:last-child { border-bottom: none; }
+  .upgrade-row.affordable {
+    border-left: 2px solid var(--accent);
+    padding-left: 0.6rem;
+    margin-left: -0.6rem;
+  }
 
   .upgrade-info h3 {
     margin: 0 0 0.15rem;
@@ -240,7 +245,7 @@
   }
   .upgrade-owned {
     font-family: 'Courier New', monospace;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--ink-soft);
     margin-top: 0.3rem;
   }
@@ -248,7 +253,7 @@
   .buy-btn {
     flex-shrink: 0;
     min-width: 92px;
-    padding: 0.55rem 0.7rem;
+    padding: 0.65rem 0.85rem;
     background: var(--ink);
     color: var(--paper);
     border: none;
@@ -293,7 +298,7 @@
   .unlock-progress-label {
     margin-top: 0.35rem;
     font-family: 'Courier New', monospace;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--ink-soft);
   }
 
@@ -339,7 +344,7 @@
   .market-info p {
     margin: 0;
     font-family: 'Courier New', monospace;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: var(--ink-soft);
   }
   .market-info .rate-line {
@@ -352,7 +357,7 @@
   .trade-btn {
     flex-shrink: 0;
     min-width: 84px;
-    padding: 0.55rem 0.7rem;
+    padding: 0.65rem 0.85rem;
     background: transparent;
     color: var(--ink);
     border: 1px solid var(--ink);
@@ -420,6 +425,81 @@
     z-index: 50;
   }
   .hint-popup.hidden { display: none; }
+
+  .onboard-banner {
+    margin: 0 0 1.4rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .onboard-banner p { margin: 0; }
+
+  .economy-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .diagram-caption {
+    margin: 0.7rem 0 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  .achievement-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px dashed var(--paper-line);
+  }
+  .achievement-row:last-child { border-bottom: none; }
+  .achievement-row.locked { opacity: 0.5; }
+  .achievement-check {
+    flex-shrink: 0;
+    width: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+    padding-top: 0.1rem;
+  }
+  .achievement-info h3 {
+    margin: 0 0 0.1rem;
+    font-size: 0.9rem;
+  }
+  .achievement-info p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+  .achievement-reward {
+    margin-top: 0.15rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  .order-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .order-info p {
+    margin: 0;
+    font-size: 0.85rem;
+  }
+  .order-progress {
+    margin-top: 0.3rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
 </style>
 </head>
 <body>
@@ -430,7 +510,7 @@
       <h1>Ledger</h1>
       <p class="subtitle">an idle accounting of small gains</p>
     </div>
-    <button id="themeToggle" type="button">DARK MODE</button>
+    <button id="themeToggle" type="button" aria-label="Switch between light and dark mode">DARK MODE</button>
   </header>
 
   <p class="about-note">
@@ -440,6 +520,10 @@
     not a background number.
   </p>
 
+  <div id="onboardBanner" class="onboard-banner hidden">
+    <p id="onboardText"></p>
+  </div>
+
   <div class="ledger-card">
     <div class="section-label">Resources</div>
     <div id="resourcesList"></div>
@@ -447,22 +531,72 @@
     <span class="gain-flash" id="gainFlash">+1</span>
   </div>
 
-  <div class="ledger-card">
+  <div class="ledger-card" data-reveal-at="sell">
     <div class="section-label">Market</div>
     <div id="marketList"></div>
   </div>
 
-  <div class="ledger-card">
+  <div class="ledger-card" data-reveal-at="done">
+    <div class="section-label">Orders</div>
+    <div id="ordersList"></div>
+  </div>
+
+  <div class="ledger-card" data-reveal-at="upgrade">
     <div class="section-label">Upgrades</div>
     <div id="upgradesList"></div>
   </div>
 
-  <div class="ledger-card">
+  <div class="ledger-card" data-reveal-at="done">
+    <div class="section-label">Achievements</div>
+    <div id="achievementsList"></div>
+  </div>
+
+  <div class="ledger-card" data-reveal-at="done">
     <div class="section-label">Statistics</div>
     <div id="statsList"></div>
   </div>
 
-  <div class="ledger-card">
+  <div class="ledger-card" data-reveal-at="done">
+    <div class="section-label">How It Fits Together</div>
+    <div id="economyDiagram">
+      <svg viewBox="0 -20 600 260" xmlns="http://www.w3.org/2000/svg" class="economy-svg">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-soft)"></path>
+          </marker>
+        </defs>
+
+        <rect x="20" y="20" width="120" height="50" rx="4" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+        <text x="80" y="50" text-anchor="middle" fill="var(--ink)" font-size="13">Paper</text>
+
+        <rect x="20" y="150" width="120" height="50" rx="4" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+        <text x="80" y="180" text-anchor="middle" fill="var(--ink)" font-size="13">Ink</text>
+
+        <rect x="240" y="150" width="120" height="50" rx="4" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+        <text x="300" y="180" text-anchor="middle" fill="var(--ink)" font-size="13">Books</text>
+
+        <rect x="460" y="85" width="120" height="50" rx="4" fill="none" stroke="var(--accent)" stroke-width="2"></rect>
+        <text x="520" y="115" text-anchor="middle" fill="var(--accent)" font-size="13" font-weight="700">Coins</text>
+
+        <line x1="140" y1="175" x2="234" y2="175" stroke="var(--ink-soft)" stroke-width="1.3" marker-end="url(#arrow)"></line>
+        <text x="187" y="167" text-anchor="middle" fill="var(--ink-soft)" font-size="10">Bindery</text>
+
+        <line x1="140" y1="55" x2="458" y2="100" stroke="var(--ink-soft)" stroke-width="1.3" marker-end="url(#arrow)"></line>
+        <line x1="140" y1="165" x2="458" y2="122" stroke="var(--ink-soft)" stroke-width="1.3" marker-end="url(#arrow)"></line>
+        <line x1="360" y1="165" x2="456" y2="130" stroke="var(--ink-soft)" stroke-width="1.3" marker-end="url(#arrow)"></line>
+        <text x="335" y="118" text-anchor="middle" fill="var(--ink-soft)" font-size="10">Market</text>
+
+        <path d="M460,95 C 300,-10 140,-10 90,18" fill="none" stroke="var(--ink-soft)" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arrow)"></path>
+        <text x="300" y="8" text-anchor="middle" fill="var(--ink-soft)" font-size="10">Upgrades (reinvest)</text>
+      </svg>
+      <p class="diagram-caption">
+        Solid arrows are Market trades. The dashed arrow is coins reinvested into Upgrades.
+        Bindery is a drain — it consumes Ink to create Books, so Books only flow if Ink keeps coming in.
+      </p>
+    </div>
+  </div>
+
+  <div class="ledger-card" data-reveal-at="done">
     <div class="section-label">Design Note</div>
     <p class="design-note-text">
       One idea from Hunicke, LeBlanc, and Zubek's MDA framework is that a game's felt
@@ -491,7 +625,7 @@
     <div id="eventLog"><div class="log-entry log-empty">Nothing recorded yet.</div></div>
   </div>
 
-  <footer>v1 complete &nbsp;·&nbsp; <button id="resetBtn" type="button">reset progress</button></footer>
+  <footer>made one small trade at a time &nbsp;·&nbsp; <button id="resetBtn" type="button">reset progress</button></footer>
 
   <button id="helpBtn" type="button" aria-label="What should I do next?">?</button>
   <div id="hintPopup" class="hint-popup hidden">
@@ -619,6 +753,64 @@ const DATA = {
       rateBonus: 0.15,
     },
   },
+
+  // Small permanent goals. Description doubles as the requirement
+  // text, so it's shown even while locked — the point is to give
+  // the player something concrete to aim for, not to keep it a
+  // surprise. Reward is optional; some are just for the checklist.
+  achievements: [
+    {
+      id: 'firstSteps',
+      label: 'First Steps',
+      description: 'Gather your first paper.',
+      condition: { type: 'totalCollected', resource: 'paper', amount: 1 },
+    },
+    {
+      id: 'firstSale',
+      label: 'First Sale',
+      description: 'Make your first trade in the Market.',
+      condition: { type: 'totalCollected', resource: 'coins', amount: 1 },
+    },
+    {
+      id: 'gettingAutomated',
+      label: 'Getting Automated',
+      description: 'Own at least 1 upgrade.',
+      condition: { type: 'upgradesOwned', amount: 1 },
+      reward: { type: 'clickYield', resource: 'paper', amount: 0.1 },
+      rewardLabel: '+0.1 Paper per click',
+    },
+    {
+      id: 'smallBusiness',
+      label: 'Small Business',
+      description: 'Own 5 upgrades total.',
+      condition: { type: 'upgradesOwned', amount: 5 },
+      reward: { type: 'clickYield', resource: 'paper', amount: 0.2 },
+      rewardLabel: '+0.2 Paper per click',
+    },
+    {
+      id: 'firstOrder',
+      label: 'First Order Filled',
+      description: 'Complete your first Order.',
+      condition: { type: 'ordersCompleted', amount: 1 },
+    },
+    {
+      id: 'steadyHand',
+      label: 'Steady Hand',
+      description: 'Play for 10 minutes total.',
+      condition: { type: 'playtime', amount: 600 },
+      reward: { type: 'clickYield', resource: 'paper', amount: 0.5 },
+      rewardLabel: '+0.5 Paper per click',
+    },
+  ],
+
+  // Tunable knobs for procedurally generated Orders, rather than
+  // a hardcoded order list — one new order is built from these
+  // numbers every time the current one is fulfilled.
+  orderConfig: {
+    baseAmount: 8,
+    growthPerOrder: 0.4,   // each completed order makes the next ~40% bigger
+    rewardMultiplier: 1.4, // pays better than a plain Market sale, on purpose
+  },
 };
 
 /* ============================================================
@@ -660,6 +852,10 @@ const GameState = {
   resources: {},
   upgrades: {},
   totalPlaytimeSeconds: 0,
+  achievementsUnlocked: new Set(),
+  ordersCompleted: 0,
+  currentOrder: null, // { resource, amount, reward }
+  onboardingStep: 'gather', // 'gather' -> 'sell' -> 'upgrade' -> 'done'
 
   init() {
     for (const key in DATA.resources) {
@@ -930,6 +1126,118 @@ const Systems = {
       return match ? match.message : this.rules[this.rules.length - 1].message;
     },
   },
+
+  // Permanent goals. Checked every tick; each unlocks at most once,
+  // applies its reward (if any) exactly once, and logs a single
+  // event. Requirement text lives in DATA, not here — this module
+  // is purely "did the condition become true."
+  Achievements: {
+    checkCondition(condition) {
+      switch (condition.type) {
+        case 'totalCollected':
+          return GameState.getResource(condition.resource).totalCollected >= condition.amount;
+        case 'upgradesOwned': {
+          let total = 0;
+          for (const id in GameState.upgrades) total += GameState.upgrades[id].owned;
+          return total >= condition.amount;
+        }
+        case 'ordersCompleted':
+          return GameState.ordersCompleted >= condition.amount;
+        case 'playtime':
+          return GameState.totalPlaytimeSeconds >= condition.amount;
+        default:
+          return false;
+      }
+    },
+
+    applyReward(reward) {
+      if (!reward) return;
+      if (reward.type === 'clickYield') GameState.raiseClickYield(reward.resource, reward.amount);
+      if (reward.type === 'rate') GameState.raiseRate(reward.resource, reward.amount);
+    },
+
+    checkAll() {
+      for (const ach of DATA.achievements) {
+        if (GameState.achievementsUnlocked.has(ach.id)) continue;
+        if (this.checkCondition(ach.condition)) {
+          GameState.achievementsUnlocked.add(ach.id);
+          this.applyReward(ach.reward);
+          UI.logEvent(`Achievement unlocked: ${ach.label}`);
+        }
+      }
+    },
+  },
+
+  // Short, repeatable delivery contracts. Pays better than a plain
+  // Market sale (rewardMultiplier), which is the incentive to seek
+  // them out instead of just trading. Fulfilling one immediately
+  // generates the next, slightly bigger.
+  Orders: {
+    generate() {
+      const candidates = Object.keys(DATA.resources).filter(
+        id => DATA.resources[id].coinValue && Systems.Unlocks.isResourceUnlocked(id)
+      );
+      const resource = candidates[Math.floor(Math.random() * candidates.length)];
+      const cfg = DATA.orderConfig;
+      const growth = 1 + GameState.ordersCompleted * cfg.growthPerOrder;
+      const amount = Math.ceil(cfg.baseAmount * growth);
+      const baseValue = DATA.resources[resource].coinValue * amount;
+      const reward = Math.ceil(baseValue * cfg.rewardMultiplier);
+      GameState.currentOrder = { resource, amount, reward };
+    },
+
+    canFulfill() {
+      const order = GameState.currentOrder;
+      if (!order) return false;
+      return GameState.getResource(order.resource).amount >= order.amount;
+    },
+
+    fulfill() {
+      if (!this.canFulfill()) return false;
+      const order = GameState.currentOrder;
+      const label = DATA.resources[order.resource].label;
+      GameState.spendResource(order.resource, order.amount);
+      GameState.addResource('coins', order.reward);
+      GameState.ordersCompleted += 1;
+      UI.logEvent(`Order filled: delivered ${order.amount} ${label} for ${order.reward} coins.`);
+      this.generate();
+      return true;
+    },
+  },
+
+  // A real first-time flow: most of the page stays hidden behind
+  // simple, staged instructions until the player has done each
+  // core action once. Returning players (existing saves) skip this
+  // entirely — see SaveManager / initApp.
+  Onboarding: {
+    STEPS: ['gather', 'sell', 'upgrade', 'done'],
+
+    stepIndex() {
+      return this.STEPS.indexOf(GameState.onboardingStep);
+    },
+
+    instructionFor(step) {
+      switch (step) {
+        case 'gather': return 'Click GATHER PAPER a few times to get started.';
+        case 'sell': return 'Now open the Market and sell your paper for coins.';
+        case 'upgrade': return 'Now buy an Apprentice in Upgrades to put paper-gathering on autopilot.';
+        default: return '';
+      }
+    },
+
+    checkAdvance() {
+      const step = GameState.onboardingStep;
+      if (step === 'gather' && GameState.getResource('paper').totalCollected >= 10) {
+        GameState.onboardingStep = 'sell';
+      } else if (step === 'sell' && GameState.getResource('coins').totalCollected > 0) {
+        GameState.onboardingStep = 'upgrade';
+      } else if (step === 'upgrade') {
+        let owned = 0;
+        for (const id in GameState.upgrades) owned += GameState.upgrades[id].owned;
+        if (owned >= 1) GameState.onboardingStep = 'done';
+      }
+    },
+  },
 };
 
 /* ============================================================
@@ -945,6 +1253,10 @@ const SaveManager = {
       resources: {},
       upgrades: {},
       totalPlaytimeSeconds: GameState.totalPlaytimeSeconds,
+      achievementsUnlocked: Array.from(GameState.achievementsUnlocked),
+      ordersCompleted: GameState.ordersCompleted,
+      currentOrder: GameState.currentOrder,
+      onboardingStep: GameState.onboardingStep,
       savedAt: UTILS.now(),
     };
     for (const id in GameState.resources) {
@@ -980,6 +1292,16 @@ const SaveManager = {
   applyToState(saveData) {
     if (!saveData) return;
     GameState.totalPlaytimeSeconds = saveData.totalPlaytimeSeconds ?? GameState.totalPlaytimeSeconds;
+    GameState.ordersCompleted = saveData.ordersCompleted ?? GameState.ordersCompleted;
+    GameState.currentOrder = saveData.currentOrder ?? GameState.currentOrder;
+    if (Array.isArray(saveData.achievementsUnlocked)) {
+      GameState.achievementsUnlocked = new Set(saveData.achievementsUnlocked);
+    }
+    // Onboarding compatibility: a save with no onboardingStep field
+    // predates this feature — that's a returning player with real
+    // progress, so skip straight to 'done' rather than forcing them
+    // through a first-time flow they've already outgrown.
+    GameState.onboardingStep = saveData.onboardingStep ?? 'done';
     for (const id in GameState.resources) {
       const saved = saveData.resources && saveData.resources[id];
       if (!saved) continue;
@@ -1022,13 +1344,24 @@ const UI = {
     this.els.helpBtn = document.getElementById('helpBtn');
     this.els.hintPopup = document.getElementById('hintPopup');
     this.els.hintText = document.getElementById('hintText');
+
+    this.els.achievementsList = document.getElementById('achievementsList');
+    this.els.ordersList = document.getElementById('ordersList');
+    this.els.onboardBanner = document.getElementById('onboardBanner');
+    this.els.onboardText = document.getElementById('onboardText');
   },
 
   render() {
+    Systems.Onboarding.checkAdvance();
+    Systems.Achievements.checkAll();
     this.renderResources();
     this.renderUpgrades();
     this.renderMarket();
     this.renderStats();
+    this.renderAchievements();
+    this.renderOrders();
+    this.renderOnboardBanner();
+    this.applyOnboardingGates();
   },
 
   // Called once at startup, after a save (if any) has been applied.
@@ -1153,6 +1486,7 @@ const UI = {
       const btn = row.querySelector('.buy-btn');
       btn.textContent = `${cost} ${DATA.resources[def.resource].label}`;
       btn.disabled = !affordable;
+      row.classList.toggle('affordable', affordable);
     }
   },
 
@@ -1226,8 +1560,91 @@ const UI = {
     let upgradesOwned = 0;
     for (const id in GameState.upgrades) upgradesOwned += GameState.upgrades[id].owned;
     html += `<div class="stat-row"><span>Upgrades owned</span><span>${upgradesOwned}</span></div>`;
+    html += `<div class="stat-row"><span>Orders filled</span><span>${GameState.ordersCompleted}</span></div>`;
+    html += `<div class="stat-row"><span>Achievements</span><span>${GameState.achievementsUnlocked.size} / ${DATA.achievements.length}</span></div>`;
     html += `<div class="stat-row"><span>Time played</span><span>${UTILS.formatDuration(GameState.totalPlaytimeSeconds)}</span></div>`;
     this.els.statsList.innerHTML = html;
+  },
+
+  // ---- Achievements ----
+  // Rebuilt once (labels/descriptions never change); only the
+  // locked/unlocked state is touched on render.
+
+  buildAchievementRows() {
+    this.els.achievementsList.innerHTML = '';
+    for (const ach of DATA.achievements) {
+      const row = document.createElement('div');
+      row.className = 'achievement-row locked';
+      row.dataset.achievement = ach.id;
+      row.innerHTML = `
+        <div class="achievement-check">○</div>
+        <div class="achievement-info">
+          <h3>${ach.label}</h3>
+          <p>${ach.description}</p>
+          ${ach.rewardLabel ? `<div class="achievement-reward">${ach.rewardLabel}</div>` : ''}
+        </div>
+      `;
+      this.els.achievementsList.appendChild(row);
+    }
+  },
+
+  renderAchievements() {
+    for (const ach of DATA.achievements) {
+      const row = this.els.achievementsList.querySelector(`[data-achievement="${ach.id}"]`);
+      const unlocked = GameState.achievementsUnlocked.has(ach.id);
+      row.classList.toggle('locked', !unlocked);
+      row.querySelector('.achievement-check').textContent = unlocked ? '✓' : '○';
+    }
+  },
+
+  // ---- Orders ----
+  // A single current order, rebuilt fresh each render — cheap,
+  // and it always reflects the live order without extra tracking.
+
+  renderOrders() {
+    const order = GameState.currentOrder;
+    if (!order) {
+      this.els.ordersList.innerHTML = '<p class="market-info">No order available yet.</p>';
+      return;
+    }
+    const label = DATA.resources[order.resource].label;
+    const have = GameState.getResource(order.resource).amount;
+    const canFulfill = Systems.Orders.canFulfill();
+    this.els.ordersList.innerHTML = `
+      <div class="order-card">
+        <div class="order-info">
+          <p>Deliver ${order.amount} ${label} for ${order.reward} Coins</p>
+          <div class="order-progress">you have ${UTILS.formatNumber(have)} / ${order.amount} ${label}</div>
+        </div>
+        <button class="trade-btn" id="fulfillOrderBtn" type="button" ${canFulfill ? '' : 'disabled'}>Fulfill</button>
+      </div>
+    `;
+    document.getElementById('fulfillOrderBtn').addEventListener('click', () => {
+      if (Systems.Orders.fulfill()) this.render();
+    });
+  },
+
+  // ---- Onboarding ----
+
+  renderOnboardBanner() {
+    const step = GameState.onboardingStep;
+    if (step === 'done') {
+      this.els.onboardBanner.classList.add('hidden');
+      return;
+    }
+    this.els.onboardBanner.classList.remove('hidden');
+    this.els.onboardText.textContent = Systems.Onboarding.instructionFor(step);
+  },
+
+  // Hides/reveals every card tagged data-reveal-at based on how far
+  // onboarding has progressed. A card with no tag is always visible.
+  applyOnboardingGates() {
+    const order = Systems.Onboarding.STEPS;
+    const currentIndex = order.indexOf(GameState.onboardingStep);
+    document.querySelectorAll('[data-reveal-at]').forEach(el => {
+      const revealIndex = order.indexOf(el.dataset.revealAt);
+      el.classList.toggle('hidden', currentIndex < revealIndex);
+    });
   },
 
   // ---- Event log ----
@@ -1319,9 +1736,12 @@ function initApp() {
   UI.buildResourceCards();
   UI.buildUpgradeRows();
   UI.buildMarketRows();
+  UI.buildAchievementRows();
   Systems.Market.initPrices();
   UI.primeUnlockedState();
   UI.bindEvents();
+
+  if (!GameState.currentOrder) Systems.Orders.generate();
 
   // Simulate the time that passed while the page was closed by
   // running one large production tick, reusing the exact same
@@ -1336,6 +1756,7 @@ function initApp() {
     }
   }
 
+  UI.applyOnboardingGates();
   UI.render();
   if (UI.pendingWelcomeBackMessage) {
     UI.logEvent(UI.pendingWelcomeBackMessage);
@@ -1350,7 +1771,7 @@ function initApp() {
   window.addEventListener('beforeunload', autosaveOnUnload);
 
   document.getElementById('resetBtn').addEventListener('click', () => {
-    if (confirm('Erase all saved progress on this device? This cannot be undone.')) {
+    if (confirm('This will erase all your progress on this device. There is no undo. Continue?')) {
       // location.reload() fires beforeunload, which would otherwise
       // autosave the current (pre-reset) state right back into
       // localStorage a moment after we clear it. Both the interval
