@@ -707,6 +707,38 @@ const DATA = {
     { id: 'inkToPaper', from: 'ink', to: 'paper', label: 'Trade Ink for Paper' },
   ],
 
+  // Specializations unlock once Books is unlocked — by then the
+  // player has seen the whole game and has real context to choose.
+  // Both scale on the same shape (one core % bonus, capped at level
+  // 10, plus milestone perks at 5/10/15/20) so neither reads as the
+  // objectively-better pick.
+  classes: {
+    scribe: {
+      id: 'scribe',
+      label: 'Scribe',
+      description: 'Rewards being at the keyboard — clicking Gather and fulfilling Orders.',
+      xpHint: 'Gain XP by clicking Gather Paper and fulfilling Orders.',
+      perks: [
+        { level: 5, text: 'Unlocks a higher-paying Scribe-only Order alongside your regular one.' },
+        { level: 10, text: 'Bonus % caps here. Clicks now have a chance to yield double paper.' },
+        { level: 15, text: 'A second Order can be active and fulfilled at the same time.' },
+        { level: 20, text: 'Mastery \u2014 eligible to switch specializations.' },
+      ],
+    },
+    merchant: {
+      id: 'merchant',
+      label: 'Merchant',
+      description: 'Rewards watching the market and selling when the price is above normal.',
+      xpHint: 'Gain XP by selling at a price above normal \u2014 the higher above, the more XP.',
+      perks: [
+        { level: 5, text: 'Market rows show which way the price is about to head next.' },
+        { level: 10, text: 'Bonus % caps here. Price swings reach their widest range.' },
+        { level: 15, text: 'Can briefly lock all prices in place before they resume drifting.' },
+        { level: 20, text: 'Mastery \u2014 eligible to switch specializations.' },
+      ],
+    },
+  },
+
   // Adding a new upgrade later = adding a new entry here.
   // No other code needs to change for it to appear and function.
   upgrades: {
@@ -854,8 +886,17 @@ const GameState = {
   totalPlaytimeSeconds: 0,
   achievementsUnlocked: new Set(),
   ordersCompleted: 0,
-  currentOrder: null, // { resource, amount, reward }
+  currentOrders: [null, null], // up to 2 slots; second only fills at Scribe L15+
   onboardingStep: 'gather', // 'gather' -> 'sell' -> 'upgrade' -> 'done'
+
+  // Specialization: levels/xp are banked forever, per class, once earned.
+  specialization: {
+    active: null,               // 'scribe' | 'merchant' | null (not chosen yet)
+    levels: { scribe: 0, merchant: 0 },
+    xp: { scribe: 0, merchant: 0 },
+    masteredBoth: false,        // true once both classes have hit level 20
+    lastSwitchAt: null,         // timestamp; only used for the post-mastery cooldown
+  },
 
   init() {
     for (const key in DATA.resources) {
@@ -931,7 +972,17 @@ const Systems = {
     // This only ever produces the resource itself — turning it
     // into coins is a separate, deliberate action via the Market.
     gather(id) {
-      const amount = GameState.getResource(id).clickYield || 1;
+      let amount = GameState.getResource(id).clickYield || 1;
+
+      // Scribe: bigger clicks, and a chance at L10+ to double the result.
+      if (id === 'paper' && GameState.specialization.active === 'scribe') {
+        amount *= 1 + Systems.Specialization.scribeBonusPct() / 100;
+        if (Systems.Specialization.hasPerk('scribe', 10) && Math.random() < 0.15) {
+          amount *= 2;
+        }
+        Systems.Specialization.addXp('scribe', 1);
+      }
+
       GameState.addResource(id, amount);
       return amount;
     },
@@ -949,7 +1000,10 @@ const Systems = {
     PRICE_MIN: 0.7,
     PRICE_MAX: 1.4,
     EASE_SPEED: 0.3,     // how quickly price eases toward its target
-    priceState: {},      // { resourceId: { multiplier, target, timer } }
+    LOCK_DURATION_MS: 10000,   // Merchant L15 perk: how long a lock holds
+    LOCK_COOLDOWN_MS: 60000,   // how often it can be used again
+    priceState: {},      // { resourceId: { multiplier, target, timer, lockedUntil } }
+    lastLockUsedAt: null,
 
     randomRetargetSeconds() {
       return 6 + Math.random() * 8; // 6-14s between target changes
@@ -962,22 +1016,67 @@ const Systems = {
           multiplier: 1,
           target: 1,
           timer: this.randomRetargetSeconds(),
+          lockedUntil: 0,
         };
       }
     },
 
+    // Merchant widens the drift band as they level, up to 2x the
+    // normal spread at L10. Only applies while Merchant is active.
+    effectiveRange() {
+      if (GameState.specialization.active !== 'merchant') {
+        return { min: this.PRICE_MIN, max: this.PRICE_MAX };
+      }
+      const swing = Systems.Specialization.merchantSwingMultiplier();
+      return {
+        min: 1 - (1 - this.PRICE_MIN) * swing,
+        max: 1 + (this.PRICE_MAX - 1) * swing,
+      };
+    },
+
     updatePrices(deltaSeconds) {
+      const nowTs = UTILS.now();
       for (const id in this.priceState) {
         const state = this.priceState[id];
+        if (state.lockedUntil && nowTs < state.lockedUntil) continue; // frozen, skip drift
         state.timer -= deltaSeconds;
         if (state.timer <= 0) {
-          state.target = this.PRICE_MIN + Math.random() * (this.PRICE_MAX - this.PRICE_MIN);
+          const range = this.effectiveRange();
+          state.target = range.min + Math.random() * (range.max - range.min);
           state.timer = this.randomRetargetSeconds();
         }
         // Ease toward the target rather than jumping, so price moves
         // read as a smooth drift instead of a jittery random walk.
         state.multiplier += (state.target - state.multiplier) * Math.min(1, deltaSeconds * this.EASE_SPEED);
       }
+    },
+
+    // Merchant L15 perk: freeze every price in place for a short
+    // window so a favorable rate can't drift away mid-decision.
+    canLock() {
+      if (!Systems.Specialization.hasPerk('merchant', 15)) return false;
+      if (!this.lastLockUsedAt) return true;
+      return UTILS.now() - this.lastLockUsedAt >= this.LOCK_COOLDOWN_MS;
+    },
+
+    lockAll() {
+      if (!this.canLock()) return false;
+      const nowTs = UTILS.now();
+      for (const id in this.priceState) {
+        this.priceState[id].target = this.priceState[id].multiplier;
+        this.priceState[id].lockedUntil = nowTs + this.LOCK_DURATION_MS;
+      }
+      this.lastLockUsedAt = nowTs;
+      return true;
+    },
+
+    // Merchant L5 perk: which way the price is currently heading.
+    trendPreview(resourceId) {
+      const state = this.priceState[resourceId];
+      if (!state) return null;
+      if (state.target > state.multiplier + 0.01) return 'up';
+      if (state.target < state.multiplier - 0.01) return 'down';
+      return 'flat';
     },
 
     // 1 unit of value = 1 coin. Coins are priced against themselves
@@ -1001,7 +1100,17 @@ const Systems = {
     tradeFullStock(fromId, toId) {
       const available = GameState.getResource(fromId).amount;
       if (available <= 0) return 0;
-      const gained = available * (this.valueOf(fromId) / this.valueOf(toId));
+      let gained = available * (this.valueOf(fromId) / this.valueOf(toId));
+
+      // Merchant: bonus coins on sells, and XP for selling above normal.
+      if (toId === 'coins' && GameState.specialization.active === 'merchant') {
+        gained *= 1 + Systems.Specialization.merchantBonusPct() / 100;
+        const state = this.priceState[fromId];
+        if (state && state.multiplier > 1) {
+          Systems.Specialization.addXp('merchant', (state.multiplier - 1) * 40);
+        }
+      }
+
       GameState.spendResource(fromId, available);
       GameState.addResource(toId, gained);
       return gained;
