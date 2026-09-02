@@ -10,28 +10,41 @@
      Paper-ledger aesthetic: serif for voice, monospace for numbers.
      ============================================================ */
   :root {
-    --paper:        #FAF7EF;
-    --paper-line:   #DEDAC9;
-    --ink:          #23221E;
-    --ink-soft:     #5C594E;
-    --accent:       #A83E32;   /* ledger red, used sparingly */
-    --accent-soft:  #C97A6D;
-    --card-bg:      #FFFFFF;
-    --shadow:       rgba(35, 34, 30, 0.06);
+    --paper:        #FBF3E3;
+    --paper-line:   #E5D8BE;
+    --ink:          #241C14;
+    --ink-soft:     #6B5A45;
+    --accent:       #B23A2E;   /* spend / price-down / brand */
+    --accent-soft:  #D97A5E;
+    --gold:         #A6741A;   /* XP, achievements, opportunity */
+    --gold-soft:    #D9A84C;
+    --positive:     #2E7D4F;   /* price-up, gains */
+    --positive-soft:#6FAE83;
+    --card-bg:      #FFFDF6;
+    --shadow:       rgba(36, 28, 20, 0.10);
   }
 
   [data-theme="dark"] {
-    --paper:        #1B1A17;
-    --paper-line:   #38362F;
-    --ink:          #EDE8DC;
-    --ink-soft:     #9A9587;
-    --accent:       #D97B6C;
-    --accent-soft:  #A85246;
-    --card-bg:      #24221D;
-    --shadow:       rgba(0, 0, 0, 0.35);
+    --paper:        #1C1712;
+    --paper-line:   #3D3427;
+    --ink:          #F2E8D8;
+    --ink-soft:     #B8A98D;
+    --accent:       #E8724F;
+    --accent-soft:  #B85A3C;
+    --gold:         #E0B152;
+    --gold-soft:    #B8862B;
+    --positive:     #5FBF7F;
+    --positive-soft:#3F8F5C;
+    --card-bg:      #241E17;
+    --shadow:       rgba(0, 0, 0, 0.4);
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  button, a {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
+    touch-action: manipulation;
+  }
 
   body {
     margin: 0;
@@ -114,6 +127,7 @@
     border-radius: 3px;
     cursor: pointer;
     letter-spacing: 0.04em;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
   #themeToggle:hover { border-color: var(--ink); }
 
@@ -178,7 +192,7 @@
     text-align: center;
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
-    color: var(--accent);
+    color: var(--gold);
     opacity: 0;
     margin-top: 0.4rem;
   }
@@ -207,6 +221,7 @@
     font-size: 0.75rem;
     cursor: pointer;
     padding: 0;
+    transition: color 0.2s ease;
   }
   #resetBtn:hover { color: var(--accent); }
 
@@ -216,6 +231,35 @@
     text-transform: uppercase;
     color: var(--ink-soft);
     margin: 0 0 0.6rem 0.1rem;
+  }
+
+  .section-label.card-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+    padding: 0.1rem 0;
+  }
+  .card-chevron {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    transition: transform 0.2s ease;
+  }
+  .ledger-card.collapsed .card-chevron { transform: rotate(-90deg); }
+  .card-body {
+    overflow: hidden;
+    max-height: 3000px;
+    margin-top: 0.6rem;
+    transition: max-height 0.25s ease, margin-top 0.25s ease, opacity 0.2s ease;
+    opacity: 1;
+  }
+  .ledger-card.collapsed .card-body {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
   }
 
   .upgrade-row {
@@ -228,7 +272,7 @@
   }
   .upgrade-row:last-child { border-bottom: none; }
   .upgrade-row.affordable {
-    border-left: 2px solid var(--accent);
+    border-left: 2px solid var(--gold);
     padding-left: 0.6rem;
     margin-left: -0.6rem;
   }
@@ -351,7 +395,7 @@
     font-weight: 600;
     margin-bottom: 0.15rem;
   }
-  .market-info .rate-line.price-up { color: var(--ink); }
+  .market-info .rate-line.price-up { color: var(--positive); }
   .market-info .rate-line.price-down { color: var(--accent); }
 
   .trade-btn {
@@ -403,6 +447,7 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px var(--shadow);
+    transition: background-color 0.2s ease;
     z-index: 50;
     transition: background-color 0.2s ease;
   }
@@ -465,7 +510,7 @@
     width: 20px;
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
-    color: var(--accent);
+    color: var(--gold);
     padding-top: 0.1rem;
   }
   .achievement-info h3 {
@@ -481,7 +526,7 @@
     margin-top: 0.15rem;
     font-family: 'Courier New', monospace;
     font-size: 0.75rem;
-    color: var(--accent);
+    color: var(--gold);
   }
 
   .order-card {
@@ -534,7 +579,7 @@
   }
   .spec-xp-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--gold);
   }
   .spec-xp-label {
     margin: 0.4rem 0 1rem;
@@ -553,7 +598,7 @@
     font-family: 'Courier New', monospace;
     font-size: 0.72rem;
     margin-right: 0.4rem;
-    color: var(--accent);
+    color: var(--gold);
   }
   .spec-perk.locked .perk-level { color: var(--ink-soft); }
   .spec-switch {
@@ -576,15 +621,16 @@
     margin-top: 0.9rem;
     padding: 0.65rem;
     background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
+    border: 1px solid var(--gold);
+    color: var(--gold);
     border-radius: 3px;
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
     cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
   }
   .lock-prices-btn:hover:not(:disabled) {
-    background: var(--accent);
+    background: var(--gold);
     color: var(--paper);
   }
   .lock-prices-btn:disabled {
@@ -633,7 +679,7 @@
     <div id="ordersList"></div>
   </div>
 
-  <div class="ledger-card hidden" data-reveal-at="done" id="specializationCard">
+  <div class="ledger-card hidden" id="specializationCard">
     <div class="section-label">Specialization</div>
     <div id="specializationBody"></div>
   </div>
@@ -695,26 +741,28 @@
 
   <div class="ledger-card" data-reveal-at="done">
     <div class="section-label">Design Note</div>
-    <p class="design-note-text">
-      One idea from Hunicke, LeBlanc, and Zubek's MDA framework is that a game's felt
-      experience (the "aesthetics") comes from dynamics — how mechanics actually play out
-      at runtime — not from the mechanics themselves. A reader encounters this directly in
-      the split within Small Trades between the Upgrades card, where paper, ink, and books
-      are gathered automatically once purchased, and the Market card, where every trade is
-      a manual click at a live, drifting price. My interpretation: automating the repetitive
-      action (clicking Gather) while keeping the one meaningful choice (when to trade) manual
-      is what should produce a feeling of ongoing agency rather than passive waiting. The open
-      limitation is that I haven't verified this with an actual player — it's possible one
-      manual decision point isn't enough to sustain that feeling past the first few
-      minutes. This reasoning is what caused me to reject a flat automatic-sell rate I'd
-      built earlier: a fixed rate would have quietly removed the only decision the player
-      had left.
-    </p>
-    <p class="design-note-source">
-      Source: Hunicke, R., LeBlanc, M., &amp; Zubek, R. (2004). <em>MDA: A Formal Approach
-      to Game Design and Game Research.</em>
-      <a href="https://users.cs.northwestern.edu/~hunicke/MDA.pdf" target="_blank" rel="noopener">users.cs.northwestern.edu/~hunicke/MDA.pdf</a>
-    </p>
+    <div id="designNoteBody">
+      <p class="design-note-text">
+        One idea from Hunicke, LeBlanc, and Zubek's MDA framework is that a game's felt
+        experience (the "aesthetics") comes from dynamics — how mechanics actually play out
+        at runtime — not from the mechanics themselves. A reader encounters this directly in
+        the split within Small Trades between the Upgrades card, where paper, ink, and books
+        are gathered automatically once purchased, and the Market card, where every trade is
+        a manual click at a live, drifting price. My interpretation: automating the repetitive
+        action (clicking Gather) while keeping the one meaningful choice (when to trade) manual
+        is what should produce a feeling of ongoing agency rather than passive waiting. The open
+        limitation is that I haven't verified this with an actual player — it's possible one
+        manual decision point isn't enough to sustain that feeling past the first few
+        minutes. This reasoning is what caused me to reject a flat automatic-sell rate I'd
+        built earlier: a fixed rate would have quietly removed the only decision the player
+        had left.
+      </p>
+      <p class="design-note-source">
+        Source: Hunicke, R., LeBlanc, M., &amp; Zubek, R. (2004). <em>MDA: A Formal Approach
+        to Game Design and Game Research.</em>
+        <a href="https://users.cs.northwestern.edu/~hunicke/MDA.pdf" target="_blank" rel="noopener">users.cs.northwestern.edu/~hunicke/MDA.pdf</a>
+      </p>
+    </div>
   </div>
 
   <div class="ledger-card">
@@ -1997,8 +2045,10 @@ const UI = {
 
   renderSpecialization() {
     const booksUnlocked = Systems.Unlocks.isResourceUnlocked('books');
-    this.els.specializationCard.classList.toggle('hidden', !booksUnlocked);
-    if (!booksUnlocked) return;
+    const onboardingDone = GameState.onboardingStep === 'done';
+    const shouldShow = booksUnlocked && onboardingDone;
+    this.els.specializationCard.classList.toggle('hidden', !shouldShow);
+    if (!shouldShow) return;
 
     const spec = GameState.specialization;
     if (!spec.active) {
@@ -2105,6 +2155,55 @@ const UI = {
       const revealIndex = order.indexOf(el.dataset.revealAt);
       el.classList.toggle('hidden', currentIndex < revealIndex);
     });
+  },
+
+  // ---- Collapsible cards ----
+  // Turns a card's section-label into a click-to-expand header.
+  // Works by locating the card via a content element it already
+  // contains, so it needs zero changes to how that content is
+  // built or re-rendered — the wrapper just holds what's already there.
+
+  setupCollapsibleCards() {
+    const configs = [
+      { contentId: 'marketList', defaultCollapsed: true },
+      { contentId: 'ordersList', defaultCollapsed: true },
+      { contentId: 'upgradesList', defaultCollapsed: true },
+      { contentId: 'achievementsList', defaultCollapsed: true },
+      { contentId: 'statsList', defaultCollapsed: true },
+      { contentId: 'economyDiagram', defaultCollapsed: true },
+      { contentId: 'designNoteBody', defaultCollapsed: true },
+      { contentId: 'specializationBody', defaultCollapsed: false },
+    ];
+    configs.forEach(cfg => this.makeCollapsible(cfg.contentId, cfg.defaultCollapsed));
+  },
+
+  makeCollapsible(contentId, defaultCollapsed) {
+    const contentEl = document.getElementById(contentId);
+    if (!contentEl) return;
+    const card = contentEl.closest('.ledger-card');
+    if (!card || card.dataset.collapsibleReady) return;
+    const label = card.querySelector('.section-label');
+    if (!label) return;
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    let node = label.nextSibling;
+    while (node) {
+      const next = node.nextSibling;
+      body.appendChild(node);
+      node = next;
+    }
+    card.appendChild(body);
+
+    label.classList.add('card-toggle');
+    const chevron = document.createElement('span');
+    chevron.className = 'card-chevron';
+    chevron.textContent = '\u25be';
+    label.appendChild(chevron);
+    label.addEventListener('click', () => card.classList.toggle('collapsed'));
+
+    if (defaultCollapsed) card.classList.add('collapsed');
+    card.dataset.collapsibleReady = 'true';
   },
 
   // ---- Event log ----
