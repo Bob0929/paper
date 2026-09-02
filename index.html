@@ -489,7 +489,11 @@
     justify-content: space-between;
     align-items: center;
     gap: 0.9rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px dashed var(--paper-line);
   }
+  .order-card:last-child { border-bottom: none; padding-bottom: 0; }
+  .order-card:first-child { padding-top: 0; }
   .order-info p {
     margin: 0;
     font-size: 0.85rem;
@@ -499,6 +503,93 @@
     font-family: 'Courier New', monospace;
     font-size: 0.75rem;
     color: var(--ink-soft);
+  }
+
+  .spec-choice {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .spec-option {
+    flex: 1 1 240px;
+    border: 1px solid var(--paper-line);
+    border-radius: 4px;
+    padding: 0.9rem 1rem;
+  }
+  .spec-option h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+  .spec-option p { margin: 0 0 0.4rem; font-size: 0.82rem; color: var(--ink-soft); }
+  .spec-option .spec-hint {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    color: var(--accent-soft);
+  }
+  .spec-option button { width: 100%; margin-top: 0.6rem; }
+
+  .spec-active h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+  .spec-xp-track {
+    height: 6px;
+    background: var(--paper-line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .spec-xp-fill {
+    height: 100%;
+    background: var(--accent);
+  }
+  .spec-xp-label {
+    margin: 0.4rem 0 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+  .spec-perk {
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--paper-line);
+    font-size: 0.82rem;
+  }
+  .spec-perk:last-child { border-bottom: none; }
+  .spec-perk.locked { color: var(--ink-soft); opacity: 0.55; }
+  .spec-perk .perk-level {
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    margin-right: 0.4rem;
+    color: var(--accent);
+  }
+  .spec-perk.locked .perk-level { color: var(--ink-soft); }
+  .spec-switch {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--paper-line);
+    font-size: 0.82rem;
+  }
+  .spec-switch button {
+    margin-top: 0.5rem;
+  }
+  .spec-switch .switch-status {
+    color: var(--ink-soft);
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+  }
+
+  .lock-prices-btn {
+    width: 100%;
+    margin-top: 0.9rem;
+    padding: 0.65rem;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .lock-prices-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--paper);
+  }
+  .lock-prices-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 </style>
 </head>
@@ -534,11 +625,17 @@
   <div class="ledger-card" data-reveal-at="sell">
     <div class="section-label">Market</div>
     <div id="marketList"></div>
+    <button class="lock-prices-btn hidden" id="lockPricesBtn" type="button">Lock Prices (10s)</button>
   </div>
 
   <div class="ledger-card" data-reveal-at="done">
     <div class="section-label">Orders</div>
     <div id="ordersList"></div>
+  </div>
+
+  <div class="ledger-card hidden" data-reveal-at="done" id="specializationCard">
+    <div class="section-label">Specialization</div>
+    <div id="specializationBody"></div>
   </div>
 
   <div class="ledger-card" data-reveal-at="upgrade">
@@ -707,6 +804,38 @@ const DATA = {
     { id: 'inkToPaper', from: 'ink', to: 'paper', label: 'Trade Ink for Paper' },
   ],
 
+  // Specializations unlock once Books is unlocked — by then the
+  // player has seen the whole game and has real context to choose.
+  // Both scale on the same shape (one core % bonus, capped at level
+  // 10, plus milestone perks at 5/10/15/20) so neither reads as the
+  // objectively-better pick.
+  classes: {
+    scribe: {
+      id: 'scribe',
+      label: 'Scribe',
+      description: 'Rewards being at the keyboard — clicking Gather and fulfilling Orders.',
+      xpHint: 'Gain XP by clicking Gather Paper and fulfilling Orders.',
+      perks: [
+        { level: 5, text: 'Unlocks a higher-paying Scribe-only Order alongside your regular one.' },
+        { level: 10, text: 'Bonus % caps here. Clicks now have a chance to yield double paper.' },
+        { level: 15, text: 'A second Order can be active and fulfilled at the same time.' },
+        { level: 20, text: 'Mastery \u2014 eligible to switch specializations.' },
+      ],
+    },
+    merchant: {
+      id: 'merchant',
+      label: 'Merchant',
+      description: 'Rewards watching the market and selling when the price is above normal.',
+      xpHint: 'Gain XP by selling at a price above normal \u2014 the higher above, the more XP.',
+      perks: [
+        { level: 5, text: 'Market rows show which way the price is about to head next.' },
+        { level: 10, text: 'Bonus % caps here. Price swings reach their widest range.' },
+        { level: 15, text: 'Can briefly lock all prices in place before they resume drifting.' },
+        { level: 20, text: 'Mastery \u2014 eligible to switch specializations.' },
+      ],
+    },
+  },
+
   // Adding a new upgrade later = adding a new entry here.
   // No other code needs to change for it to appear and function.
   upgrades: {
@@ -854,8 +983,17 @@ const GameState = {
   totalPlaytimeSeconds: 0,
   achievementsUnlocked: new Set(),
   ordersCompleted: 0,
-  currentOrder: null, // { resource, amount, reward }
+  currentOrders: [null, null], // up to 2 slots; second only fills at Scribe L15+
   onboardingStep: 'gather', // 'gather' -> 'sell' -> 'upgrade' -> 'done'
+
+  // Specialization: levels/xp are banked forever, per class, once earned.
+  specialization: {
+    active: null,               // 'scribe' | 'merchant' | null (not chosen yet)
+    levels: { scribe: 0, merchant: 0 },
+    xp: { scribe: 0, merchant: 0 },
+    masteredBoth: false,        // true once both classes have hit level 20
+    lastSwitchAt: null,         // timestamp; only used for the post-mastery cooldown
+  },
 
   init() {
     for (const key in DATA.resources) {
@@ -931,7 +1069,17 @@ const Systems = {
     // This only ever produces the resource itself — turning it
     // into coins is a separate, deliberate action via the Market.
     gather(id) {
-      const amount = GameState.getResource(id).clickYield || 1;
+      let amount = GameState.getResource(id).clickYield || 1;
+
+      // Scribe: bigger clicks, and a chance at L10+ to double the result.
+      if (id === 'paper' && GameState.specialization.active === 'scribe') {
+        amount *= 1 + Systems.Specialization.scribeBonusPct() / 100;
+        if (Systems.Specialization.hasPerk('scribe', 10) && Math.random() < 0.15) {
+          amount *= 2;
+        }
+        Systems.Specialization.addXp('scribe', 1);
+      }
+
       GameState.addResource(id, amount);
       return amount;
     },
@@ -949,7 +1097,10 @@ const Systems = {
     PRICE_MIN: 0.7,
     PRICE_MAX: 1.4,
     EASE_SPEED: 0.3,     // how quickly price eases toward its target
-    priceState: {},      // { resourceId: { multiplier, target, timer } }
+    LOCK_DURATION_MS: 10000,   // Merchant L15 perk: how long a lock holds
+    LOCK_COOLDOWN_MS: 60000,   // how often it can be used again
+    priceState: {},      // { resourceId: { multiplier, target, timer, lockedUntil } }
+    lastLockUsedAt: null,
 
     randomRetargetSeconds() {
       return 6 + Math.random() * 8; // 6-14s between target changes
@@ -962,22 +1113,67 @@ const Systems = {
           multiplier: 1,
           target: 1,
           timer: this.randomRetargetSeconds(),
+          lockedUntil: 0,
         };
       }
     },
 
+    // Merchant widens the drift band as they level, up to 2x the
+    // normal spread at L10. Only applies while Merchant is active.
+    effectiveRange() {
+      if (GameState.specialization.active !== 'merchant') {
+        return { min: this.PRICE_MIN, max: this.PRICE_MAX };
+      }
+      const swing = Systems.Specialization.merchantSwingMultiplier();
+      return {
+        min: 1 - (1 - this.PRICE_MIN) * swing,
+        max: 1 + (this.PRICE_MAX - 1) * swing,
+      };
+    },
+
     updatePrices(deltaSeconds) {
+      const nowTs = UTILS.now();
       for (const id in this.priceState) {
         const state = this.priceState[id];
+        if (state.lockedUntil && nowTs < state.lockedUntil) continue; // frozen, skip drift
         state.timer -= deltaSeconds;
         if (state.timer <= 0) {
-          state.target = this.PRICE_MIN + Math.random() * (this.PRICE_MAX - this.PRICE_MIN);
+          const range = this.effectiveRange();
+          state.target = range.min + Math.random() * (range.max - range.min);
           state.timer = this.randomRetargetSeconds();
         }
         // Ease toward the target rather than jumping, so price moves
         // read as a smooth drift instead of a jittery random walk.
         state.multiplier += (state.target - state.multiplier) * Math.min(1, deltaSeconds * this.EASE_SPEED);
       }
+    },
+
+    // Merchant L15 perk: freeze every price in place for a short
+    // window so a favorable rate can't drift away mid-decision.
+    canLock() {
+      if (!Systems.Specialization.hasPerk('merchant', 15)) return false;
+      if (!this.lastLockUsedAt) return true;
+      return UTILS.now() - this.lastLockUsedAt >= this.LOCK_COOLDOWN_MS;
+    },
+
+    lockAll() {
+      if (!this.canLock()) return false;
+      const nowTs = UTILS.now();
+      for (const id in this.priceState) {
+        this.priceState[id].target = this.priceState[id].multiplier;
+        this.priceState[id].lockedUntil = nowTs + this.LOCK_DURATION_MS;
+      }
+      this.lastLockUsedAt = nowTs;
+      return true;
+    },
+
+    // Merchant L5 perk: which way the price is currently heading.
+    trendPreview(resourceId) {
+      const state = this.priceState[resourceId];
+      if (!state) return null;
+      if (state.target > state.multiplier + 0.01) return 'up';
+      if (state.target < state.multiplier - 0.01) return 'down';
+      return 'flat';
     },
 
     // 1 unit of value = 1 coin. Coins are priced against themselves
@@ -1001,7 +1197,17 @@ const Systems = {
     tradeFullStock(fromId, toId) {
       const available = GameState.getResource(fromId).amount;
       if (available <= 0) return 0;
-      const gained = available * (this.valueOf(fromId) / this.valueOf(toId));
+      let gained = available * (this.valueOf(fromId) / this.valueOf(toId));
+
+      // Merchant: bonus coins on sells, and XP for selling above normal.
+      if (toId === 'coins' && GameState.specialization.active === 'merchant') {
+        gained *= 1 + Systems.Specialization.merchantBonusPct() / 100;
+        const state = this.priceState[fromId];
+        if (state && state.multiplier > 1) {
+          Systems.Specialization.addXp('merchant', (state.multiplier - 1) * 40);
+        }
+      }
+
       GameState.spendResource(fromId, available);
       GameState.addResource(toId, gained);
       return gained;
@@ -1173,7 +1379,21 @@ const Systems = {
   // them out instead of just trading. Fulfilling one immediately
   // generates the next, slightly bigger.
   Orders: {
-    generate() {
+    // Slot 0 always exists. Slot 1 only exists once Scribe reaches
+    // L15 — ensureSlots() keeps that in sync every render/tick,
+    // rather than only checking at generation time, so the second
+    // slot appears the moment the perk unlocks, not on the next order.
+    ensureSlots() {
+      if (!GameState.currentOrders[0]) this.generate(0);
+      const secondSlotEligible = Systems.Specialization.hasPerk('scribe', 15);
+      if (secondSlotEligible && !GameState.currentOrders[1]) {
+        this.generate(1);
+      } else if (!secondSlotEligible && GameState.currentOrders[1]) {
+        GameState.currentOrders[1] = null; // perk lost (shouldn't happen, banked) — safety only
+      }
+    },
+
+    generate(slot) {
       const candidates = Object.keys(DATA.resources).filter(
         id => DATA.resources[id].coinValue && Systems.Unlocks.isResourceUnlocked(id)
       );
@@ -1182,25 +1402,32 @@ const Systems = {
       const growth = 1 + GameState.ordersCompleted * cfg.growthPerOrder;
       const amount = Math.ceil(cfg.baseAmount * growth);
       const baseValue = DATA.resources[resource].coinValue * amount;
-      const reward = Math.ceil(baseValue * cfg.rewardMultiplier);
-      GameState.currentOrder = { resource, amount, reward };
+      let reward = Math.ceil(baseValue * cfg.rewardMultiplier);
+      GameState.currentOrders[slot] = { resource, amount, reward };
     },
 
-    canFulfill() {
-      const order = GameState.currentOrder;
+    canFulfill(slot) {
+      const order = GameState.currentOrders[slot];
       if (!order) return false;
       return GameState.getResource(order.resource).amount >= order.amount;
     },
 
-    fulfill() {
-      if (!this.canFulfill()) return false;
-      const order = GameState.currentOrder;
+    fulfill(slot) {
+      if (!this.canFulfill(slot)) return false;
+      const order = GameState.currentOrders[slot];
       const label = DATA.resources[order.resource].label;
+      let reward = order.reward;
+
+      if (GameState.specialization.active === 'scribe') {
+        reward = Math.ceil(reward * (1 + Systems.Specialization.scribeBonusPct() / 100));
+        Systems.Specialization.addXp('scribe', reward / 2);
+      }
+
       GameState.spendResource(order.resource, order.amount);
-      GameState.addResource('coins', order.reward);
+      GameState.addResource('coins', reward);
       GameState.ordersCompleted += 1;
-      UI.logEvent(`Order filled: delivered ${order.amount} ${label} for ${order.reward} coins.`);
-      this.generate();
+      UI.logEvent(`Order filled: delivered ${order.amount} ${label} for ${reward} coins.`);
+      this.generate(slot);
       return true;
     },
   },
@@ -1238,6 +1465,96 @@ const Systems = {
       }
     },
   },
+
+  // Scribe vs Merchant. Levels and XP are banked forever per class —
+  // switching never loses progress. % bonuses grow with level but
+  // cap at BONUS_CAP_LEVEL; leveling past that is purely toward the
+  // level-20 mastery gate, which is what unlocking switching costs.
+  Specialization: {
+    XP_BASE: 20,
+    XP_GROWTH: 1.25,
+    MAX_LEVEL: 20,
+    BONUS_CAP_LEVEL: 10,
+    SWITCH_COOLDOWN_MS: 2 * 60 * 60 * 1000, // 2 hours, only applies post-mastery
+
+    xpForNextLevel(level) {
+      return Math.ceil(this.XP_BASE * Math.pow(this.XP_GROWTH, level));
+    },
+
+    addXp(classId, amount) {
+      if (amount <= 0) return;
+      if (GameState.specialization.active !== classId) return; // only the active class earns
+      if (GameState.specialization.levels[classId] >= this.MAX_LEVEL) return; // maxed
+      GameState.specialization.xp[classId] += amount;
+      this.checkLevelUp(classId);
+    },
+
+    checkLevelUp(classId) {
+      let level = GameState.specialization.levels[classId];
+      while (level < this.MAX_LEVEL) {
+        const needed = this.xpForNextLevel(level);
+        if (GameState.specialization.xp[classId] < needed) break;
+        GameState.specialization.xp[classId] -= needed;
+        level += 1;
+        GameState.specialization.levels[classId] = level;
+        UI.logEvent(`${DATA.classes[classId].label} reached level ${level}.`);
+        if (level === this.MAX_LEVEL) this.checkMastery();
+      }
+    },
+
+    checkMastery() {
+      const lv = GameState.specialization.levels;
+      if (lv.scribe >= this.MAX_LEVEL && lv.merchant >= this.MAX_LEVEL) {
+        if (!GameState.specialization.masteredBoth) {
+          GameState.specialization.masteredBoth = true;
+          UI.logEvent('Both specializations mastered — switching is now unlocked, on a cooldown.');
+        }
+      }
+    },
+
+    hasPerk(classId, level) {
+      return GameState.specialization.levels[classId] >= level;
+    },
+
+    scribeBonusPct() {
+      const lvl = Math.min(GameState.specialization.levels.scribe, this.BONUS_CAP_LEVEL);
+      return lvl <= 0 ? 0 : 10 + (lvl - 1) * 2; // 10% at L1 -> 28% at L10
+    },
+
+    merchantBonusPct() {
+      const lvl = Math.min(GameState.specialization.levels.merchant, this.BONUS_CAP_LEVEL);
+      return lvl <= 0 ? 0 : 5 + (lvl - 1) * 1.5; // 5% at L1 -> 18.5% at L10
+    },
+
+    merchantSwingMultiplier() {
+      const lvl = Math.min(GameState.specialization.levels.merchant, this.BONUS_CAP_LEVEL);
+      return lvl <= 0 ? 1 : 1 + (lvl - 1) * (1 / 9); // 1.0 at L1 -> 2.0 at L10
+    },
+
+    // Whether the player is currently allowed to pick/switch classes.
+    canSwitch() {
+      const spec = GameState.specialization;
+      if (!spec.active) return true; // first-ever pick: no gate
+      if (spec.masteredBoth) return this.switchCooldownRemainingMs() <= 0;
+      return spec.levels[spec.active] >= this.MAX_LEVEL; // must master current before leaving it
+    },
+
+    switchCooldownRemainingMs() {
+      const spec = GameState.specialization;
+      if (!spec.masteredBoth || !spec.lastSwitchAt) return 0;
+      return Math.max(0, this.SWITCH_COOLDOWN_MS - (UTILS.now() - spec.lastSwitchAt));
+    },
+
+    choose(classId) {
+      if (!this.canSwitch()) return false;
+      const spec = GameState.specialization;
+      const isSwitch = !!spec.active && spec.active !== classId;
+      spec.active = classId;
+      if (isSwitch && spec.masteredBoth) spec.lastSwitchAt = UTILS.now();
+      UI.logEvent(`${isSwitch ? 'Switched to' : 'Chose'} ${DATA.classes[classId].label}.`);
+      return true;
+    },
+  },
 };
 
 /* ============================================================
@@ -1255,8 +1572,9 @@ const SaveManager = {
       totalPlaytimeSeconds: GameState.totalPlaytimeSeconds,
       achievementsUnlocked: Array.from(GameState.achievementsUnlocked),
       ordersCompleted: GameState.ordersCompleted,
-      currentOrder: GameState.currentOrder,
+      currentOrders: GameState.currentOrders,
       onboardingStep: GameState.onboardingStep,
+      specialization: GameState.specialization,
       savedAt: UTILS.now(),
     };
     for (const id in GameState.resources) {
@@ -1293,7 +1611,23 @@ const SaveManager = {
     if (!saveData) return;
     GameState.totalPlaytimeSeconds = saveData.totalPlaytimeSeconds ?? GameState.totalPlaytimeSeconds;
     GameState.ordersCompleted = saveData.ordersCompleted ?? GameState.ordersCompleted;
-    GameState.currentOrder = saveData.currentOrder ?? GameState.currentOrder;
+    // currentOrders replaces the older single currentOrder field — a save
+    // from before this feature just has neither, which is fine: ensureSlots()
+    // generates fresh orders on startup either way.
+    if (Array.isArray(saveData.currentOrders)) {
+      GameState.currentOrders = saveData.currentOrders;
+    } else if (saveData.currentOrder) {
+      GameState.currentOrders = [saveData.currentOrder, null];
+    }
+    if (saveData.specialization) {
+      GameState.specialization.active = saveData.specialization.active ?? null;
+      GameState.specialization.levels.scribe = saveData.specialization.levels?.scribe ?? 0;
+      GameState.specialization.levels.merchant = saveData.specialization.levels?.merchant ?? 0;
+      GameState.specialization.xp.scribe = saveData.specialization.xp?.scribe ?? 0;
+      GameState.specialization.xp.merchant = saveData.specialization.xp?.merchant ?? 0;
+      GameState.specialization.masteredBoth = saveData.specialization.masteredBoth ?? false;
+      GameState.specialization.lastSwitchAt = saveData.specialization.lastSwitchAt ?? null;
+    }
     if (Array.isArray(saveData.achievementsUnlocked)) {
       GameState.achievementsUnlocked = new Set(saveData.achievementsUnlocked);
     }
@@ -1349,6 +1683,10 @@ const UI = {
     this.els.ordersList = document.getElementById('ordersList');
     this.els.onboardBanner = document.getElementById('onboardBanner');
     this.els.onboardText = document.getElementById('onboardText');
+
+    this.els.specializationCard = document.getElementById('specializationCard');
+    this.els.specializationBody = document.getElementById('specializationBody');
+    this.els.lockPricesBtn = document.getElementById('lockPricesBtn');
   },
 
   render() {
@@ -1360,6 +1698,7 @@ const UI = {
     this.renderStats();
     this.renderAchievements();
     this.renderOrders();
+    this.renderSpecialization();
     this.renderOnboardBanner();
     this.applyOnboardingGates();
   },
@@ -1518,6 +1857,9 @@ const UI = {
   },
 
   renderMarket() {
+    const showPreview = Systems.Specialization.hasPerk('merchant', 5) &&
+      GameState.specialization.active === 'merchant';
+
     for (const conv of DATA.marketConversions) {
       const row = this.els.marketList.querySelector(`[data-conversion="${conv.id}"]`);
       const unlocked = Systems.Unlocks.isResourceUnlocked(conv.from);
@@ -1534,13 +1876,26 @@ const UI = {
 
       const rateLine = row.querySelector('.rate-line');
       const trend = multiplier > 1.05 ? '▲' : multiplier < 0.95 ? '▼' : '·';
-      rateLine.textContent = `${trend} 1 ${fromLabel} ≈ ${unitRate.toFixed(2)} ${toLabel}`;
+      let lineText = `${trend} 1 ${fromLabel} ≈ ${unitRate.toFixed(2)} ${toLabel}`;
+      if (showPreview) {
+        const heading = Systems.Market.trendPreview(conv.from);
+        const headingSymbol = heading === 'up' ? '▲' : heading === 'down' ? '▼' : '·';
+        lineText += ` (heading ${headingSymbol})`;
+      }
+      rateLine.textContent = lineText;
       rateLine.classList.toggle('price-up', multiplier > 1.05);
       rateLine.classList.toggle('price-down', multiplier < 0.95);
 
       row.querySelector('.quote-line').textContent =
         `${UTILS.formatNumber(stock)} ${fromLabel} → ${UTILS.formatNumber(quote)} ${toLabel}`;
       row.querySelector('.trade-btn').disabled = stock <= 0;
+    }
+
+    const lockEligible = Systems.Specialization.hasPerk('merchant', 15) &&
+      GameState.specialization.active === 'merchant';
+    this.els.lockPricesBtn.classList.toggle('hidden', !lockEligible);
+    if (lockEligible) {
+      this.els.lockPricesBtn.disabled = !Systems.Market.canLock();
     }
   },
 
@@ -1562,6 +1917,12 @@ const UI = {
     html += `<div class="stat-row"><span>Upgrades owned</span><span>${upgradesOwned}</span></div>`;
     html += `<div class="stat-row"><span>Orders filled</span><span>${GameState.ordersCompleted}</span></div>`;
     html += `<div class="stat-row"><span>Achievements</span><span>${GameState.achievementsUnlocked.size} / ${DATA.achievements.length}</span></div>`;
+    if (GameState.specialization.active) {
+      const classId = GameState.specialization.active;
+      const label = DATA.classes[classId].label;
+      const level = GameState.specialization.levels[classId];
+      html += `<div class="stat-row"><span>Specialization</span><span>${label}, Level ${level}</span></div>`;
+    }
     html += `<div class="stat-row"><span>Time played</span><span>${UTILS.formatDuration(GameState.totalPlaytimeSeconds)}</span></div>`;
     this.els.statsList.innerHTML = html;
   },
@@ -1598,30 +1959,129 @@ const UI = {
   },
 
   // ---- Orders ----
-  // A single current order, rebuilt fresh each render — cheap,
-  // and it always reflects the live order without extra tracking.
+  // Rebuilt fresh each render — cheap, and it always reflects live
+  // state without extra tracking. Slot 1 only renders once the
+  // Scribe L15 perk is active.
 
   renderOrders() {
-    const order = GameState.currentOrder;
-    if (!order) {
-      this.els.ordersList.innerHTML = '<p class="market-info">No order available yet.</p>';
-      return;
-    }
-    const label = DATA.resources[order.resource].label;
-    const have = GameState.getResource(order.resource).amount;
-    const canFulfill = Systems.Orders.canFulfill();
-    this.els.ordersList.innerHTML = `
-      <div class="order-card">
-        <div class="order-info">
-          <p>Deliver ${order.amount} ${label} for ${order.reward} Coins</p>
-          <div class="order-progress">you have ${UTILS.formatNumber(have)} / ${order.amount} ${label}</div>
+    Systems.Orders.ensureSlots();
+    let html = '';
+    GameState.currentOrders.forEach((order, slot) => {
+      if (!order) return;
+      const label = DATA.resources[order.resource].label;
+      const have = GameState.getResource(order.resource).amount;
+      const canFulfill = Systems.Orders.canFulfill(slot);
+      html += `
+        <div class="order-card">
+          <div class="order-info">
+            <p>Deliver ${order.amount} ${label} for ${order.reward} Coins</p>
+            <div class="order-progress">you have ${UTILS.formatNumber(have)} / ${order.amount} ${label}</div>
+          </div>
+          <button class="trade-btn fulfill-order-btn" data-slot="${slot}" type="button" ${canFulfill ? '' : 'disabled'}>Fulfill</button>
         </div>
-        <button class="trade-btn" id="fulfillOrderBtn" type="button" ${canFulfill ? '' : 'disabled'}>Fulfill</button>
+      `;
+    });
+    this.els.ordersList.innerHTML = html || '<p class="market-info">No order available yet.</p>';
+    this.els.ordersList.querySelectorAll('.fulfill-order-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (Systems.Orders.fulfill(Number(btn.dataset.slot))) this.render();
+      });
+    });
+  },
+
+  // ---- Specialization ----
+  // Gated on Books being unlocked (independent of the onboarding
+  // gate) — by then the player has seen the whole game. Rebuilt
+  // fresh each render; it's small and changes shape (choice screen
+  // vs active panel) often enough that diffing isn't worth it.
+
+  renderSpecialization() {
+    const booksUnlocked = Systems.Unlocks.isResourceUnlocked('books');
+    this.els.specializationCard.classList.toggle('hidden', !booksUnlocked);
+    if (!booksUnlocked) return;
+
+    const spec = GameState.specialization;
+    if (!spec.active) {
+      this.renderSpecializationChoice();
+    } else {
+      this.renderSpecializationActive();
+    }
+  },
+
+  renderSpecializationChoice() {
+    let html = '<div class="spec-choice">';
+    for (const classId in DATA.classes) {
+      const def = DATA.classes[classId];
+      html += `
+        <div class="spec-option">
+          <h3>${def.label}</h3>
+          <p>${def.description}</p>
+          <p class="spec-hint">${def.xpHint}</p>
+          <button class="buy-btn choose-class-btn" data-class="${classId}" type="button">Choose ${def.label}</button>
+        </div>
+      `;
+    }
+    html += '</div>';
+    this.els.specializationBody.innerHTML = html;
+    this.els.specializationBody.querySelectorAll('.choose-class-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (Systems.Specialization.choose(btn.dataset.class)) this.render();
+      });
+    });
+  },
+
+  renderSpecializationActive() {
+    const spec = GameState.specialization;
+    const classId = spec.active;
+    const def = DATA.classes[classId];
+    const level = spec.levels[classId];
+    const S = Systems.Specialization;
+
+    const mastered = level >= S.MAX_LEVEL;
+    const xpNeeded = mastered ? 0 : S.xpForNextLevel(level);
+    const xpHave = spec.xp[classId];
+    const xpPct = mastered ? 100 : Math.min(100, (xpHave / xpNeeded) * 100);
+    const xpLabel = mastered
+      ? 'Mastery reached'
+      : `${Math.floor(xpHave)} / ${xpNeeded} XP to level ${level + 1}`;
+
+    let perksHtml = '';
+    for (const perk of def.perks) {
+      const unlocked = level >= perk.level;
+      perksHtml += `
+        <div class="spec-perk ${unlocked ? '' : 'locked'}">
+          <span class="perk-level">L${perk.level}</span>${perk.text}
+        </div>
+      `;
+    }
+
+    const otherClassId = classId === 'scribe' ? 'merchant' : 'scribe';
+    const otherLabel = DATA.classes[otherClassId].label;
+    let switchHtml = '';
+    if (S.canSwitch()) {
+      switchHtml = `<button class="buy-btn switch-class-btn" data-class="${otherClassId}" type="button">Switch to ${otherLabel}</button>`;
+    } else if (!spec.masteredBoth) {
+      switchHtml = `<div class="switch-status">Reach Level ${S.MAX_LEVEL} to unlock switching to ${otherLabel}.</div>`;
+    } else {
+      const remaining = UTILS.formatDuration(S.switchCooldownRemainingMs() / 1000);
+      switchHtml = `<div class="switch-status">Switching available in ${remaining}.</div>`;
+    }
+
+    this.els.specializationBody.innerHTML = `
+      <div class="spec-active">
+        <h3>${def.label} \u2014 Level ${level}${mastered ? ' (Mastered)' : ''}</h3>
+        <div class="spec-xp-track"><div class="spec-xp-fill" style="width:${xpPct}%"></div></div>
+        <div class="spec-xp-label">${xpLabel}</div>
+        <div class="spec-perks">${perksHtml}</div>
+        <div class="spec-switch">${switchHtml}</div>
       </div>
     `;
-    document.getElementById('fulfillOrderBtn').addEventListener('click', () => {
-      if (Systems.Orders.fulfill()) this.render();
-    });
+    const switchBtn = this.els.specializationBody.querySelector('.switch-class-btn');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
+        if (Systems.Specialization.choose(switchBtn.dataset.class)) this.render();
+      });
+    }
   },
 
   // ---- Onboarding ----
@@ -1691,6 +2151,10 @@ const UI = {
       this.els.hintText.textContent = Systems.Hints.getCurrentHint();
       this.els.hintPopup.classList.toggle('hidden');
     });
+
+    this.els.lockPricesBtn.addEventListener('click', () => {
+      if (Systems.Market.lockAll()) this.render();
+    });
   },
 };
 
@@ -1741,7 +2205,7 @@ function initApp() {
   UI.primeUnlockedState();
   UI.bindEvents();
 
-  if (!GameState.currentOrder) Systems.Orders.generate();
+  Systems.Orders.ensureSlots();
 
   // Simulate the time that passed while the page was closed by
   // running one large production tick, reusing the exact same
