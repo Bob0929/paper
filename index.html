@@ -10,28 +10,41 @@
      Paper-ledger aesthetic: serif for voice, monospace for numbers.
      ============================================================ */
   :root {
-    --paper:        #FAF7EF;
-    --paper-line:   #DEDAC9;
-    --ink:          #23221E;
-    --ink-soft:     #5C594E;
-    --accent:       #A83E32;   /* ledger red, used sparingly */
-    --accent-soft:  #C97A6D;
-    --card-bg:      #FFFFFF;
-    --shadow:       rgba(35, 34, 30, 0.06);
+    --paper:        #FBF3E3;
+    --paper-line:   #E5D8BE;
+    --ink:          #241C14;
+    --ink-soft:     #6B5A45;
+    --accent:       #B23A2E;   /* spend / price-down / brand */
+    --accent-soft:  #D97A5E;
+    --gold:         #A6741A;   /* XP, achievements, opportunity */
+    --gold-soft:    #D9A84C;
+    --positive:     #2E7D4F;   /* price-up, gains */
+    --positive-soft:#6FAE83;
+    --card-bg:      #FFFDF6;
+    --shadow:       rgba(36, 28, 20, 0.10);
   }
 
   [data-theme="dark"] {
-    --paper:        #1B1A17;
-    --paper-line:   #38362F;
-    --ink:          #EDE8DC;
-    --ink-soft:     #9A9587;
-    --accent:       #D97B6C;
-    --accent-soft:  #A85246;
-    --card-bg:      #24221D;
-    --shadow:       rgba(0, 0, 0, 0.35);
+    --paper:        #1C1712;
+    --paper-line:   #3D3427;
+    --ink:          #F2E8D8;
+    --ink-soft:     #B8A98D;
+    --accent:       #E8724F;
+    --accent-soft:  #B85A3C;
+    --gold:         #E0B152;
+    --gold-soft:    #B8862B;
+    --positive:     #5FBF7F;
+    --positive-soft:#3F8F5C;
+    --card-bg:      #241E17;
+    --shadow:       rgba(0, 0, 0, 0.4);
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  button, a {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
+    touch-action: manipulation;
+  }
 
   body {
     margin: 0;
@@ -114,6 +127,7 @@
     border-radius: 3px;
     cursor: pointer;
     letter-spacing: 0.04em;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
   #themeToggle:hover { border-color: var(--ink); }
 
@@ -178,7 +192,7 @@
     text-align: center;
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
-    color: var(--accent);
+    color: var(--gold);
     opacity: 0;
     margin-top: 0.4rem;
   }
@@ -207,6 +221,7 @@
     font-size: 0.75rem;
     cursor: pointer;
     padding: 0;
+    transition: color 0.2s ease;
   }
   #resetBtn:hover { color: var(--accent); }
 
@@ -216,6 +231,35 @@
     text-transform: uppercase;
     color: var(--ink-soft);
     margin: 0 0 0.6rem 0.1rem;
+  }
+
+  .section-label.card-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+    padding: 0.1rem 0;
+  }
+  .card-chevron {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    transition: transform 0.2s ease;
+  }
+  .ledger-card.collapsed .card-chevron { transform: rotate(-90deg); }
+  .card-body {
+    overflow: hidden;
+    max-height: 3000px;
+    margin-top: 0.6rem;
+    transition: max-height 0.25s ease, margin-top 0.25s ease, opacity 0.2s ease;
+    opacity: 1;
+  }
+  .ledger-card.collapsed .card-body {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
   }
 
   .upgrade-row {
@@ -228,7 +272,7 @@
   }
   .upgrade-row:last-child { border-bottom: none; }
   .upgrade-row.affordable {
-    border-left: 2px solid var(--accent);
+    border-left: 2px solid var(--gold);
     padding-left: 0.6rem;
     margin-left: -0.6rem;
   }
@@ -351,7 +395,7 @@
     font-weight: 600;
     margin-bottom: 0.15rem;
   }
-  .market-info .rate-line.price-up { color: var(--ink); }
+  .market-info .rate-line.price-up { color: var(--positive); }
   .market-info .rate-line.price-down { color: var(--accent); }
 
   .trade-btn {
@@ -403,6 +447,7 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px var(--shadow);
+    transition: background-color 0.2s ease;
     z-index: 50;
     transition: background-color 0.2s ease;
   }
@@ -465,7 +510,7 @@
     width: 20px;
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
-    color: var(--accent);
+    color: var(--gold);
     padding-top: 0.1rem;
   }
   .achievement-info h3 {
@@ -481,7 +526,7 @@
     margin-top: 0.15rem;
     font-family: 'Courier New', monospace;
     font-size: 0.75rem;
-    color: var(--accent);
+    color: var(--gold);
   }
 
   .order-card {
@@ -490,9 +535,12 @@
     align-items: center;
     gap: 0.9rem;
     padding: 0.6rem 0;
-    border-bottom: 1px dashed var(--paper-line);
   }
-  .order-card:last-child { border-bottom: none; padding-bottom: 0; }
+  .order-card + .order-card:not(.hidden) {
+    border-top: 1px dashed var(--paper-line);
+    padding-top: 0.9rem;
+    margin-top: 0.3rem;
+  }
   .order-card:first-child { padding-top: 0; }
   .order-info p {
     margin: 0;
@@ -526,6 +574,17 @@
   .spec-option button { width: 100%; margin-top: 0.6rem; }
 
   .spec-active h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+  .spec-starting-tip {
+    margin: 0 0 0.9rem;
+    padding: 0.7rem 0.85rem;
+    background: var(--card-bg);
+    border: 1px solid var(--gold-soft);
+    border-left: 3px solid var(--gold);
+    border-radius: 3px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
   .spec-xp-track {
     height: 6px;
     background: var(--paper-line);
@@ -534,7 +593,7 @@
   }
   .spec-xp-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--gold);
   }
   .spec-xp-label {
     margin: 0.4rem 0 1rem;
@@ -553,7 +612,7 @@
     font-family: 'Courier New', monospace;
     font-size: 0.72rem;
     margin-right: 0.4rem;
-    color: var(--accent);
+    color: var(--gold);
   }
   .spec-perk.locked .perk-level { color: var(--ink-soft); }
   .spec-switch {
@@ -576,20 +635,68 @@
     margin-top: 0.9rem;
     padding: 0.65rem;
     background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
+    border: 1px solid var(--gold);
+    color: var(--gold);
     border-radius: 3px;
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
     cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
   }
   .lock-prices-btn:hover:not(:disabled) {
-    background: var(--accent);
+    background: var(--gold);
     color: var(--paper);
   }
   .lock-prices-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+  /* ============================================================
+     MOBILE / SMALL SCREEN
+     Row layouts (label + button side by side) don't have room for
+     both on a narrow phone, so they stack instead. Tap targets get
+     a little taller since fingers are less precise than a cursor.
+     ============================================================ */
+  @media (max-width: 600px) {
+    .wrap { padding: 1.5rem 1rem 3rem; }
+
+    header h1 { font-size: 1.4rem; }
+    header { align-items: center; }
+
+    .upgrade-row, .market-row, .order-card, .achievement-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+    .upgrade-row .buy-btn,
+    .market-row .trade-btn,
+    .order-card .trade-btn {
+      width: 100%;
+      min-width: 0;
+      padding: 0.75rem;
+    }
+
+    .spec-choice { flex-direction: column; }
+    .spec-option { flex: 1 1 auto; }
+
+    #helpBtn {
+      width: 50px;
+      height: 50px;
+      bottom: 1rem;
+      right: 1rem;
+    }
+    .hint-popup {
+      right: 1rem;
+      left: 1rem;
+      max-width: none;
+      bottom: 4.6rem;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .ledger-card { padding: 1rem 0.9rem; }
+    header h1 { font-size: 1.2rem; }
+    .gather-btn { font-size: 0.85rem; padding: 0.75rem; }
   }
 </style>
 </head>
@@ -633,7 +740,7 @@
     <div id="ordersList"></div>
   </div>
 
-  <div class="ledger-card hidden" data-reveal-at="done" id="specializationCard">
+  <div class="ledger-card hidden" id="specializationCard">
     <div class="section-label">Specialization</div>
     <div id="specializationBody"></div>
   </div>
@@ -695,26 +802,28 @@
 
   <div class="ledger-card" data-reveal-at="done">
     <div class="section-label">Design Note</div>
-    <p class="design-note-text">
-      One idea from Hunicke, LeBlanc, and Zubek's MDA framework is that a game's felt
-      experience (the "aesthetics") comes from dynamics — how mechanics actually play out
-      at runtime — not from the mechanics themselves. A reader encounters this directly in
-      the split within Small Trades between the Upgrades card, where paper, ink, and books
-      are gathered automatically once purchased, and the Market card, where every trade is
-      a manual click at a live, drifting price. My interpretation: automating the repetitive
-      action (clicking Gather) while keeping the one meaningful choice (when to trade) manual
-      is what should produce a feeling of ongoing agency rather than passive waiting. The open
-      limitation is that I haven't verified this with an actual player — it's possible one
-      manual decision point isn't enough to sustain that feeling past the first few
-      minutes. This reasoning is what caused me to reject a flat automatic-sell rate I'd
-      built earlier: a fixed rate would have quietly removed the only decision the player
-      had left.
-    </p>
-    <p class="design-note-source">
-      Source: Hunicke, R., LeBlanc, M., &amp; Zubek, R. (2004). <em>MDA: A Formal Approach
-      to Game Design and Game Research.</em>
-      <a href="https://users.cs.northwestern.edu/~hunicke/MDA.pdf" target="_blank" rel="noopener">users.cs.northwestern.edu/~hunicke/MDA.pdf</a>
-    </p>
+    <div id="designNoteBody">
+      <p class="design-note-text">
+        One idea from Hunicke, LeBlanc, and Zubek's MDA framework is that a game's felt
+        experience (the "aesthetics") comes from dynamics — how mechanics actually play out
+        at runtime — not from the mechanics themselves. A reader encounters this directly in
+        the split within Small Trades between the Upgrades card, where paper, ink, and books
+        are gathered automatically once purchased, and the Market card, where every trade is
+        a manual click at a live, drifting price. My interpretation: automating the repetitive
+        action (clicking Gather) while keeping the one meaningful choice (when to trade) manual
+        is what should produce a feeling of ongoing agency rather than passive waiting. The open
+        limitation is that I haven't verified this with an actual player — it's possible one
+        manual decision point isn't enough to sustain that feeling past the first few
+        minutes. This reasoning is what caused me to reject a flat automatic-sell rate I'd
+        built earlier: a fixed rate would have quietly removed the only decision the player
+        had left.
+      </p>
+      <p class="design-note-source">
+        Source: Hunicke, R., LeBlanc, M., &amp; Zubek, R. (2004). <em>MDA: A Formal Approach
+        to Game Design and Game Research.</em>
+        <a href="https://users.cs.northwestern.edu/~hunicke/MDA.pdf" target="_blank" rel="noopener">users.cs.northwestern.edu/~hunicke/MDA.pdf</a>
+      </p>
+    </div>
   </div>
 
   <div class="ledger-card">
@@ -815,6 +924,7 @@ const DATA = {
       label: 'Scribe',
       description: 'Rewards being at the keyboard — clicking Gather and fulfilling Orders.',
       xpHint: 'Gain XP by clicking Gather Paper and fulfilling Orders.',
+      introMessage: 'You are now a Scribe. Every click of Gather Paper earns a little XP, and fulfilling an Order earns a lot more. Level up to grow your click power and Order payout, both capping at Level 10 — after that, leveling still counts toward the perks at 15 and 20.',
       perks: [
         { level: 5, text: 'Unlocks a higher-paying Scribe-only Order alongside your regular one.' },
         { level: 10, text: 'Bonus % caps here. Clicks now have a chance to yield double paper.' },
@@ -827,6 +937,7 @@ const DATA = {
       label: 'Merchant',
       description: 'Rewards watching the market and selling when the price is above normal.',
       xpHint: 'Gain XP by selling at a price above normal \u2014 the higher above, the more XP.',
+      introMessage: 'You are now a Merchant. Selling in the Market while the price is above normal earns XP — the further above normal, the more you get. Selling at or below normal earns nothing. Level up to grow your sale bonus and widen how far prices swing, both capping at Level 10 — after that, leveling still counts toward the perks at 15 and 20.',
       perks: [
         { level: 5, text: 'Market rows show which way the price is about to head next.' },
         { level: 10, text: 'Bonus % caps here. Price swings reach their widest range.' },
@@ -993,6 +1104,7 @@ const GameState = {
     xp: { scribe: 0, merchant: 0 },
     masteredBoth: false,        // true once both classes have hit level 20
     lastSwitchAt: null,         // timestamp; only used for the post-mastery cooldown
+    introShown: { scribe: false, merchant: false }, // one-time teaching message per class
   },
 
   init() {
@@ -1321,15 +1433,48 @@ const Systems = {
         message: 'Books are unlocked — a Bindery turns ink into books, so keep an Ink Merchant running too.',
       },
       {
-        id: 'fallback',
-        check: () => true,
-        message: 'Watch the Market rate lines — prices drift, so timing your trades earns more than selling on autopilot.',
+        id: 'orders-fulfillable',
+        check: () => GameState.currentOrders.some((o, slot) => o && Systems.Orders.canFulfill(slot)),
+        message: 'You can fulfill an Order right now — open Orders and hit Fulfill. It pays more than a normal sale.',
       },
+      {
+        id: 'specialization-available',
+        check: () => Systems.Unlocks.isResourceUnlocked('books') && !GameState.specialization.active,
+        message: 'Open Specialization and pick a path — Scribe rewards clicking and Orders, Merchant rewards smart trading. Either can be switched later.',
+      },
+      {
+        id: 'specialization-scribe-tip',
+        check: () => GameState.specialization.active === 'scribe' && GameState.specialization.levels.scribe < 1,
+        message: DATA.classes.scribe.xpHint,
+      },
+      {
+        id: 'specialization-merchant-tip',
+        check: () => GameState.specialization.active === 'merchant' && GameState.specialization.levels.merchant < 1,
+        message: DATA.classes.merchant.xpHint,
+      },
+      {
+        id: 'lock-price-available',
+        check: () => Systems.Specialization.hasPerk('merchant', 15) && Systems.Market.canLock(),
+        message: 'Lock Prices is ready — freeze every rate for 10 seconds when you want to act without the price slipping away.',
+      },
+    ],
+
+    // Shown at random when no rule above matches — variety instead
+    // of one repeated fallback line every time the button is clicked.
+    generalTips: [
+      'Tip: every card title is a button — click it to expand or collapse it.',
+      'Watch the Market rate lines — timing a sale earns more than selling on autopilot.',
+      'Achievements give small permanent bonuses — check the card for what you still need.',
+      'Orders usually pay more than a plain Market sale — worth checking in on.',
+      'Dark mode lives in the top-right corner, if the page feels too bright.',
+      'Progress saves automatically every few seconds — closing the tab is always safe.',
+      'Specializations bank their levels forever — trying the other one later never costs you progress.',
     ],
 
     getCurrentHint() {
       const match = this.rules.find(rule => rule.check());
-      return match ? match.message : this.rules[this.rules.length - 1].message;
+      if (match) return match.message;
+      return this.generalTips[Math.floor(Math.random() * this.generalTips.length)];
     },
   },
 
@@ -1551,7 +1696,12 @@ const Systems = {
       const isSwitch = !!spec.active && spec.active !== classId;
       spec.active = classId;
       if (isSwitch && spec.masteredBoth) spec.lastSwitchAt = UTILS.now();
-      UI.logEvent(`${isSwitch ? 'Switched to' : 'Chose'} ${DATA.classes[classId].label}.`);
+      if (!spec.introShown[classId]) {
+        spec.introShown[classId] = true;
+        UI.logEvent(DATA.classes[classId].introMessage);
+      } else {
+        UI.logEvent(`${isSwitch ? 'Switched to' : 'Chose'} ${DATA.classes[classId].label}.`);
+      }
       return true;
     },
   },
@@ -1627,6 +1777,14 @@ const SaveManager = {
       GameState.specialization.xp.merchant = saveData.specialization.xp?.merchant ?? 0;
       GameState.specialization.masteredBoth = saveData.specialization.masteredBoth ?? false;
       GameState.specialization.lastSwitchAt = saveData.specialization.lastSwitchAt ?? null;
+      // A save predating introShown: if they already have levels/an active
+      // class, they've clearly already seen how it works — default to
+      // "already shown" per class rather than replaying the intro on them.
+      const priorLevels = saveData.specialization.levels || {};
+      GameState.specialization.introShown.scribe =
+        saveData.specialization.introShown?.scribe ?? (priorLevels.scribe > 0 || saveData.specialization.active === 'scribe');
+      GameState.specialization.introShown.merchant =
+        saveData.specialization.introShown?.merchant ?? (priorLevels.merchant > 0 || saveData.specialization.active === 'merchant');
     }
     if (Array.isArray(saveData.achievementsUnlocked)) {
       GameState.achievementsUnlocked = new Set(saveData.achievementsUnlocked);
@@ -1959,75 +2117,141 @@ const UI = {
   },
 
   // ---- Orders ----
-  // Rebuilt fresh each render — cheap, and it always reflects live
-  // state without extra tracking. Slot 1 only renders once the
-  // Scribe L15 perk is active.
+  // Both slots are built ONCE and permanently exist in the DOM;
+  // an empty slot is just hidden, never removed. Every render only
+  // updates text and the disabled attribute on existing nodes —
+  // the button under your cursor is never destroyed and recreated,
+  // which is what was causing the hover flicker.
+
+  buildOrderRows() {
+    this.els.ordersList.innerHTML = '';
+    for (let slot = 0; slot < 2; slot++) {
+      const row = document.createElement('div');
+      row.className = 'order-card hidden';
+      row.dataset.slot = slot;
+      row.innerHTML = `
+        <div class="order-info">
+          <p class="order-desc"></p>
+          <div class="order-progress"></div>
+        </div>
+        <button class="trade-btn fulfill-order-btn" type="button">Fulfill</button>
+      `;
+      row.querySelector('.fulfill-order-btn').addEventListener('click', () => {
+        if (Systems.Orders.fulfill(slot)) this.render();
+      });
+      this.els.ordersList.appendChild(row);
+    }
+  },
 
   renderOrders() {
     Systems.Orders.ensureSlots();
-    let html = '';
-    GameState.currentOrders.forEach((order, slot) => {
-      if (!order) return;
+    for (let slot = 0; slot < 2; slot++) {
+      const row = this.els.ordersList.querySelector(`[data-slot="${slot}"]`);
+      const order = GameState.currentOrders[slot];
+      if (!order) {
+        row.classList.add('hidden');
+        continue;
+      }
+      row.classList.remove('hidden');
       const label = DATA.resources[order.resource].label;
       const have = GameState.getResource(order.resource).amount;
-      const canFulfill = Systems.Orders.canFulfill(slot);
-      html += `
-        <div class="order-card">
-          <div class="order-info">
-            <p>Deliver ${order.amount} ${label} for ${order.reward} Coins</p>
-            <div class="order-progress">you have ${UTILS.formatNumber(have)} / ${order.amount} ${label}</div>
-          </div>
-          <button class="trade-btn fulfill-order-btn" data-slot="${slot}" type="button" ${canFulfill ? '' : 'disabled'}>Fulfill</button>
-        </div>
-      `;
-    });
-    this.els.ordersList.innerHTML = html || '<p class="market-info">No order available yet.</p>';
-    this.els.ordersList.querySelectorAll('.fulfill-order-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (Systems.Orders.fulfill(Number(btn.dataset.slot))) this.render();
-      });
-    });
+      row.querySelector('.order-desc').textContent = `Deliver ${order.amount} ${label} for ${order.reward} Coins`;
+      row.querySelector('.order-progress').textContent = `you have ${UTILS.formatNumber(have)} / ${order.amount} ${label}`;
+      row.querySelector('.fulfill-order-btn').disabled = !Systems.Orders.canFulfill(slot);
+    }
   },
 
   // ---- Specialization ----
   // Gated on Books being unlocked (independent of the onboarding
-  // gate) — by then the player has seen the whole game. Rebuilt
-  // fresh each render; it's small and changes shape (choice screen
-  // vs active panel) often enough that diffing isn't worth it.
+  // gate) — by then the player has seen the whole game. Both the
+  // choice screen and the active panel are built ONCE and coexist
+  // in the DOM; render() only toggles which is visible and updates
+  // text/classes on the existing nodes. This matters: a button that
+  // gets destroyed and recreated on every 200ms tick loses its
+  // hover state constantly, which is what was causing the flicker.
+
+  buildSpecializationDom() {
+    const body = this.els.specializationBody;
+    body.innerHTML = '';
+
+    // --- Choice screen ---
+    const choiceEl = document.createElement('div');
+    choiceEl.id = 'specChoiceScreen';
+    choiceEl.className = 'spec-choice';
+    for (const classId in DATA.classes) {
+      const def = DATA.classes[classId];
+      const option = document.createElement('div');
+      option.className = 'spec-option';
+      option.innerHTML = `
+        <h3>${def.label}</h3>
+        <p>${def.description}</p>
+        <p class="spec-hint">${def.xpHint}</p>
+        <button class="buy-btn choose-class-btn" type="button">Choose ${def.label}</button>
+      `;
+      option.querySelector('.choose-class-btn').addEventListener('click', () => {
+        if (Systems.Specialization.choose(classId)) this.render();
+      });
+      choiceEl.appendChild(option);
+    }
+    body.appendChild(choiceEl);
+
+    // --- Active panel ---
+    const activeEl = document.createElement('div');
+    activeEl.id = 'specActivePanel';
+    activeEl.className = 'spec-active hidden';
+    activeEl.innerHTML = `
+      <h3 id="specTitle"></h3>
+      <div class="spec-starting-tip hidden" id="specStartingTip"></div>
+      <div class="spec-xp-track"><div class="spec-xp-fill" id="specXpFill" style="width:0%"></div></div>
+      <div class="spec-xp-label" id="specXpLabel"></div>
+      <div class="spec-perks" id="specPerks"></div>
+      <div class="spec-switch">
+        <button class="buy-btn switch-class-btn hidden" id="specSwitchBtn" type="button"></button>
+        <div class="switch-status hidden" id="specSwitchStatus"></div>
+      </div>
+    `;
+    // Perk rows per class, built once each; only their 'locked' class
+    // ever changes afterward. Both lists exist; only one is shown.
+    const perksContainer = activeEl.querySelector('#specPerks');
+    for (const classId in DATA.classes) {
+      const list = document.createElement('div');
+      list.className = 'spec-perk-list hidden';
+      list.dataset.class = classId;
+      DATA.classes[classId].perks.forEach(perk => {
+        const row = document.createElement('div');
+        row.className = 'spec-perk locked';
+        row.dataset.level = perk.level;
+        row.innerHTML = `<span class="perk-level">L${perk.level}</span>${perk.text}`;
+        list.appendChild(row);
+      });
+      perksContainer.appendChild(list);
+    }
+    activeEl.querySelector('#specSwitchBtn').addEventListener('click', function () {
+      if (Systems.Specialization.choose(this.dataset.class)) UI.render();
+    });
+    body.appendChild(activeEl);
+  },
 
   renderSpecialization() {
     const booksUnlocked = Systems.Unlocks.isResourceUnlocked('books');
-    this.els.specializationCard.classList.toggle('hidden', !booksUnlocked);
-    if (!booksUnlocked) return;
+    const onboardingDone = GameState.onboardingStep === 'done';
+    const shouldShow = booksUnlocked && onboardingDone;
+    this.els.specializationCard.classList.toggle('hidden', !shouldShow);
+    if (!shouldShow) return;
 
     const spec = GameState.specialization;
-    if (!spec.active) {
-      this.renderSpecializationChoice();
-    } else {
-      this.renderSpecializationActive();
-    }
-  },
+    const body = this.els.specializationBody;
+    const choiceEl = body.querySelector('#specChoiceScreen');
+    const activeEl = body.querySelector('#specActivePanel');
 
-  renderSpecializationChoice() {
-    let html = '<div class="spec-choice">';
-    for (const classId in DATA.classes) {
-      const def = DATA.classes[classId];
-      html += `
-        <div class="spec-option">
-          <h3>${def.label}</h3>
-          <p>${def.description}</p>
-          <p class="spec-hint">${def.xpHint}</p>
-          <button class="buy-btn choose-class-btn" data-class="${classId}" type="button">Choose ${def.label}</button>
-        </div>
-      `;
+    if (!spec.active) {
+      choiceEl.classList.remove('hidden');
+      activeEl.classList.add('hidden');
+      return;
     }
-    html += '</div>';
-    this.els.specializationBody.innerHTML = html;
-    this.els.specializationBody.querySelectorAll('.choose-class-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (Systems.Specialization.choose(btn.dataset.class)) this.render();
-      });
-    });
+    choiceEl.classList.add('hidden');
+    activeEl.classList.remove('hidden');
+    this.renderSpecializationActive();
   },
 
   renderSpecializationActive() {
@@ -2036,6 +2260,7 @@ const UI = {
     const def = DATA.classes[classId];
     const level = spec.levels[classId];
     const S = Systems.Specialization;
+    const body = this.els.specializationBody;
 
     const mastered = level >= S.MAX_LEVEL;
     const xpNeeded = mastered ? 0 : S.xpForNextLevel(level);
@@ -2045,42 +2270,37 @@ const UI = {
       ? 'Mastery reached'
       : `${Math.floor(xpHave)} / ${xpNeeded} XP to level ${level + 1}`;
 
-    let perksHtml = '';
-    for (const perk of def.perks) {
-      const unlocked = level >= perk.level;
-      perksHtml += `
-        <div class="spec-perk ${unlocked ? '' : 'locked'}">
-          <span class="perk-level">L${perk.level}</span>${perk.text}
-        </div>
-      `;
-    }
+    body.querySelector('#specTitle').textContent =
+      `${def.label} \u2014 Level ${level}${mastered ? ' (Mastered)' : ''}`;
+    body.querySelector('#specXpFill').style.width = `${xpPct}%`;
+    body.querySelector('#specXpLabel').textContent = xpLabel;
+
+    const tipEl = body.querySelector('#specStartingTip');
+    tipEl.classList.toggle('hidden', level !== 0);
+    if (level === 0) tipEl.textContent = def.introMessage;
+
+    body.querySelectorAll('.spec-perk-list').forEach(list => {
+      list.classList.toggle('hidden', list.dataset.class !== classId);
+    });
+    body.querySelectorAll(`.spec-perk-list[data-class="${classId}"] .spec-perk`).forEach(row => {
+      row.classList.toggle('locked', level < Number(row.dataset.level));
+    });
 
     const otherClassId = classId === 'scribe' ? 'merchant' : 'scribe';
     const otherLabel = DATA.classes[otherClassId].label;
-    let switchHtml = '';
+    const switchBtn = body.querySelector('#specSwitchBtn');
+    const switchStatus = body.querySelector('#specSwitchStatus');
     if (S.canSwitch()) {
-      switchHtml = `<button class="buy-btn switch-class-btn" data-class="${otherClassId}" type="button">Switch to ${otherLabel}</button>`;
-    } else if (!spec.masteredBoth) {
-      switchHtml = `<div class="switch-status">Reach Level ${S.MAX_LEVEL} to unlock switching to ${otherLabel}.</div>`;
+      switchBtn.classList.remove('hidden');
+      switchStatus.classList.add('hidden');
+      switchBtn.textContent = `Switch to ${otherLabel}`;
+      switchBtn.dataset.class = otherClassId;
     } else {
-      const remaining = UTILS.formatDuration(S.switchCooldownRemainingMs() / 1000);
-      switchHtml = `<div class="switch-status">Switching available in ${remaining}.</div>`;
-    }
-
-    this.els.specializationBody.innerHTML = `
-      <div class="spec-active">
-        <h3>${def.label} \u2014 Level ${level}${mastered ? ' (Mastered)' : ''}</h3>
-        <div class="spec-xp-track"><div class="spec-xp-fill" style="width:${xpPct}%"></div></div>
-        <div class="spec-xp-label">${xpLabel}</div>
-        <div class="spec-perks">${perksHtml}</div>
-        <div class="spec-switch">${switchHtml}</div>
-      </div>
-    `;
-    const switchBtn = this.els.specializationBody.querySelector('.switch-class-btn');
-    if (switchBtn) {
-      switchBtn.addEventListener('click', () => {
-        if (Systems.Specialization.choose(switchBtn.dataset.class)) this.render();
-      });
+      switchBtn.classList.add('hidden');
+      switchStatus.classList.remove('hidden');
+      switchStatus.textContent = !spec.masteredBoth
+        ? `Reach Level ${S.MAX_LEVEL} to unlock switching to ${otherLabel}.`
+        : `Switching available in ${UTILS.formatDuration(S.switchCooldownRemainingMs() / 1000)}.`;
     }
   },
 
@@ -2105,6 +2325,55 @@ const UI = {
       const revealIndex = order.indexOf(el.dataset.revealAt);
       el.classList.toggle('hidden', currentIndex < revealIndex);
     });
+  },
+
+  // ---- Collapsible cards ----
+  // Turns a card's section-label into a click-to-expand header.
+  // Works by locating the card via a content element it already
+  // contains, so it needs zero changes to how that content is
+  // built or re-rendered — the wrapper just holds what's already there.
+
+  setupCollapsibleCards() {
+    const configs = [
+      { contentId: 'marketList', defaultCollapsed: true },
+      { contentId: 'ordersList', defaultCollapsed: true },
+      { contentId: 'upgradesList', defaultCollapsed: true },
+      { contentId: 'achievementsList', defaultCollapsed: true },
+      { contentId: 'statsList', defaultCollapsed: true },
+      { contentId: 'economyDiagram', defaultCollapsed: true },
+      { contentId: 'designNoteBody', defaultCollapsed: true },
+      { contentId: 'specializationBody', defaultCollapsed: false },
+    ];
+    configs.forEach(cfg => this.makeCollapsible(cfg.contentId, cfg.defaultCollapsed));
+  },
+
+  makeCollapsible(contentId, defaultCollapsed) {
+    const contentEl = document.getElementById(contentId);
+    if (!contentEl) return;
+    const card = contentEl.closest('.ledger-card');
+    if (!card || card.dataset.collapsibleReady) return;
+    const label = card.querySelector('.section-label');
+    if (!label) return;
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    let node = label.nextSibling;
+    while (node) {
+      const next = node.nextSibling;
+      body.appendChild(node);
+      node = next;
+    }
+    card.appendChild(body);
+
+    label.classList.add('card-toggle');
+    const chevron = document.createElement('span');
+    chevron.className = 'card-chevron';
+    chevron.textContent = '\u25be';
+    label.appendChild(chevron);
+    label.addEventListener('click', () => card.classList.toggle('collapsed'));
+
+    if (defaultCollapsed) card.classList.add('collapsed');
+    card.dataset.collapsibleReady = 'true';
   },
 
   // ---- Event log ----
@@ -2201,6 +2470,9 @@ function initApp() {
   UI.buildUpgradeRows();
   UI.buildMarketRows();
   UI.buildAchievementRows();
+  UI.buildOrderRows();
+  UI.buildSpecializationDom();
+  UI.setupCollapsibleCards();
   Systems.Market.initPrices();
   UI.primeUnlockedState();
   UI.bindEvents();
